@@ -1,0 +1,100 @@
+services:
+  db:
+    image: postgres:16
+    container_name: aktivhike_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app_net
+    ports:
+      - 127.0.0.1:15432:5432
+
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: aktivhike_redis
+  #   restart: unless-stopped
+  #   command: ["redis-server", "--appendonly", "yes"]
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 2s
+  #     retries: 10
+  #   networks:
+  #     - app_net
+  #   ports:
+  #     - 127.0.0.1:16379:6379
+
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: redis_commander
+  #   environment:
+  #     - REDIS_HOSTS=local:redis:6379
+  #   ports:
+  #     - "8081:8081"
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - app_net
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: aktivhike_migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./internal/db/migrations:/migrations:ro
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        'migrate -path=/migrations -database "$${DB_DSN}" up || migrate -path=/migrations -database "$${DB_DSN}" up',
+      ]
+    environment:
+      DB_DSN: ${DB_DSN}
+    networks:
+      - app_net
+    restart: no
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aktivhike_bot
+    depends_on:
+      db:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
+      DB_DSN: ${DB_DSN}
+      REDIS_ADDR: redis:6379
+      TZ: "Asia/Tbilisi"
+    restart: unless-stopped
+    networks:
+      - app_net
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  app_net:
+    driver: bridge
