@@ -1,4 +1,4 @@
-package admin
+package handlers
 
 import (
 	"context"
@@ -9,29 +9,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/bot/admin/fsm"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Handler struct {
-	loc *time.Location
-	bot *tgbot.BotAPI
-	queries *sqlc.Queries
+	loc         *time.Location
+	bot         *tgbot.BotAPI
+	queries     *sqlc.Queries
 	adminChatID int64
-	fsm *FSM
+	fsm         *fsm.FSM
 }
 
 func New(l *time.Location, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *Handler {
 	return &Handler{
-		loc: l,
-		bot: b,
-		queries: q,
+		loc:         l,
+		bot:         b,
+		queries:     q,
 		adminChatID: acID,
-		fsm: NewFSM(),
+		fsm:         fsm.NewFSM(),
 	}
 }
 
-func (h*Handler) IsAdmin(userID int64) bool {
+func (h *Handler) IsAdmin(userID int64) bool {
 	m, err := h.bot.GetChatMember(tgbot.GetChatMemberConfig{
 		ChatConfigWithUser: tgbot.ChatConfigWithUser{
 			ChatID: h.adminChatID,
@@ -51,7 +52,7 @@ func (h*Handler) IsAdmin(userID int64) bool {
 
 func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 	// FSM step. If is any active states
-	if st := h.fsm.State(m.From.ID); st != StateIdle && !m.IsCommand() {
+	if st := h.fsm.State(m.From.ID); st != fsm.StateIdle && !m.IsCommand() {
 		return h.handleFSM(ctx, m)
 	}
 
@@ -59,8 +60,8 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 	if m.IsCommand() {
 		switch m.Command() {
 		case "start":
-		// Ничего не делаем, чтобы не мешать /newhike и не показывать меню
-		return nil
+			// Ничего не делаем, чтобы не мешать /newhike и не показывать меню
+			return nil
 
 		case "help":
 			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Админ-помощь: /newhike — создать хайк, /hikes — список, /admin — меню."))
@@ -69,16 +70,50 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 			// Покажем пока что все. Их пока все равно очень мало
 			return h.sendHikesList(m.Chat.ID)
 		case "newhike":
-			h.fsm.Set(m.From.ID, StateCreateTitleRU)
+			h.fsm.Set(m.From.ID, fsm.StateCreateTitleRU)
 			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите название RU:"))
 			return err
-		// case "admin":
-		// 	return h.sendAdminMenu(m.Chat.ID)
 		}
 	}
-	return nil
-	// By default: show the menu
-	//return h.sendAdminMenu(m.Chat.ID)
+
+	// Reply Keyboard
+	switch m.Text {
+	case "➕ Создать хайк":
+		h.fsm.Set(m.From.ID, fsm.StateCreateTitleRU)
+		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите название RU:"))
+		return err
+
+	case "📋 Список хайков":
+		return h.sendHikesList(m.Chat.ID)
+
+	case "❓ Помощь":
+		_, err := h.bot.Send(tgbot.NewMessage(
+			m.Chat.ID,
+			"Что умеет админ-бот:\n"+
+				"• «Создать хайк» — запускает мастера создания\n"+
+				"• «Список хайков» — показывает все актуальные\n"+
+				"• /newhike, /hikes — те же действия командами",
+		))
+		return err
+	}
+
+	return h.sendAdminMenu(m.Chat.ID)
+}
+
+func (h *Handler) sendAdminMenu(chatID int64) error {
+	msg := tgbot.NewMessage(chatID, "Админ-меню. Выберите действие:")
+	msg.ReplyMarkup = tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("➕ Создать хайк"),
+			tgbot.NewKeyboardButton("📋 Список хайков"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("❓ Помощь"),
+		),
+	)
+
+	_, err := h.bot.Send(msg)
+	return err
 }
 
 func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
@@ -88,17 +123,14 @@ func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) er
 	case data == "a:new":
 		// раньше тут не было return — добавляем, чтобы не продолжать обработку ниже
 		return h.startCreateHike(ctx, q)
-	
-	case data == "a:new":
-		h.startCreateHike(ctx, q)
-	
+
 	case strings.HasPrefix(data, "a:list:actual"):
 		return h.showActual(ctx, q)
 
 	case strings.HasPrefix(data, "a:cart:"):
 		id, _ := strconv.Atoi(strings.TrimPrefix(data, "a:cart:"))
 		return h.showCard(ctx, q, int32(id))
-	
+
 	case strings.HasPrefix(data, "a:pub:"):
 		parts := strings.Split(data, ":")
 		if len(parts) != 4 {
@@ -107,7 +139,7 @@ func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) er
 		id64, _ := strconv.ParseInt(parts[2], 10, 32)
 		val := parts[3] == "1"
 		if err := h.queries.SetPublished(ctx, sqlc.SetPublishedParams{
-			ID: int32(id64),
+			ID:          int32(id64),
 			IsPublished: val,
 		}); err != nil {
 			_, _ = h.bot.Send(tgbot.NewCallback(q.ID, "Ошибка: не удалось обновить"))
@@ -126,7 +158,7 @@ func (h *Handler) startCreateHike(ctx context.Context, q *tgbot.CallbackQuery) e
 	chatID := q.Message.Chat.ID
 
 	h.fsm.Reset(userID)
-	h.fsm.Set(userID, StateCreateTitleRU)
+	h.fsm.Set(userID, fsm.StateCreateTitleRU)
 
 	msg := tgbot.NewMessage(chatID, "🆕 Создание нового хайка.\n\nВведите название (RU):")
 	_, err := h.bot.Send(msg)
@@ -148,10 +180,10 @@ func (h *Handler) saveCreatedHike(ctx context.Context, userID int64) error {
 
 	// Set params
 	args := sqlc.CreateHikeParams{
-		TitleRu: data["title_ru"],
+		TitleRu:       data["title_ru"],
 		DescriptionRu: data["description_ru"],
-		StartsAt: startAt,
-		EndsAt: endsAt,
+		StartsAt:      startAt,
+		EndsAt:        endsAt,
 	}
 
 	// Create Hike
@@ -186,12 +218,12 @@ func parseHikeDates(input string, now time.Time, loc *time.Location) (time.Time,
 		return parseRange(tokens[0], tokens[1], now, loc)
 
 	default:
-		return time.Time{}, time.Time{}, errors.New("не получилось распознать даты (слишком много частей)") 
+		return time.Time{}, time.Time{}, errors.New("не получилось распознать даты (слишком много частей)")
 	}
 }
 
 var (
-	reDay = regexp.MustCompile(`^\d{1,2}$`) // 1..31
+	reDay      = regexp.MustCompile(`^\d{1,2}$`)             // 1..31
 	reDayMonth = regexp.MustCompile(`(^\d{1,2})\.(\d{1,2})`) // dd.mm
 )
 
@@ -208,27 +240,31 @@ func parseSingle(token string, now time.Time, loc *time.Location) (time.Time, ti
 				return time.Time{}, time.Time{}, err
 			}
 		}
-		return start, start, nil
+		// один день
+		end := time.Date(start.Year(), start.Month(), start.Day(), 22, 0, 0, 0, loc)
+		return start, end, nil
 	}
 
 	if reDay.MatchString(token) {
 		day, _ := strconv.Atoi(token)
-		var start, end time.Time
+
+		var start time.Time
+		// выбираем месяц: если день уже прошёл — берём следующий
 		if now.Day() > day {
-			start = time.Date(now.Year(), now.Month()+1 , day, 8, 0, 0, 0, loc)
-			end = time.Date(now.Year(), now.Month()+1 , day, 22, 0, 0, 0, loc)
+			start = time.Date(now.Year(), now.Month()+1, day, 8, 0, 0, 0, loc)
 		} else {
 			start = time.Date(now.Year(), now.Month(), day, 8, 0, 0, 0, loc)
-			end = time.Date(now.Year(), now.Month()+1 , day, 22, 0, 0, 0, loc)
 		}
-		
+
+		// однодневный хайк
+		end := time.Date(start.Year(), start.Month(), start.Day(), 22, 0, 0, 0, loc)
 		return start, end, nil
 	}
 
 	return time.Time{}, time.Time{}, errors.New("ожидал формат 'dd' или 'dd.mm'")
 }
 
-func parseRange(a,b string, now time.Time, loc *time.Location) (time.Time, time.Time, error) {
+func parseRange(a, b string, now time.Time, loc *time.Location) (time.Time, time.Time, error) {
 	switch {
 	case reDay.MatchString(a) && reDay.MatchString(b):
 		// both are days without months
@@ -245,7 +281,7 @@ func parseDayDay(a, b string, now time.Time, loc *time.Location) (time.Time, tim
 	dayA, _ := strconv.Atoi(a)
 	dayB, _ := strconv.Atoi(b)
 
-	start := time.Date(now.Year(), now.Month(), dayA, 8, 0, 0, 0,loc)
+	start := time.Date(now.Year(), now.Month(), dayA, 8, 0, 0, 0, loc)
 
 	var end time.Time
 	if dayB >= dayA {
@@ -274,7 +310,7 @@ func parseDDMM(token string, year int, loc *time.Location) (time.Time, error) {
 	return time.Date(year, time.Month(mon), day, 8, 0, 0, 0, loc), nil
 }
 
-func parseDDMM_DDMM(a, b string, now time.Time, loc *time.Location)(time.Time, time.Time, error) {
+func parseDDMM_DDMM(a, b string, now time.Time, loc *time.Location) (time.Time, time.Time, error) {
 	// Try current year
 	start, err := parseDDMM(a, now.Year(), loc)
 	if err != nil {
@@ -297,7 +333,7 @@ func parseDDMM_DDMM(a, b string, now time.Time, loc *time.Location)(time.Time, t
 			return time.Time{}, time.Time{}, err
 		}
 	}
-	
+
 	// If the end before start
 	if end.Before(start) {
 		// TODO: обмозговать
@@ -316,24 +352,24 @@ func truncateToDay(t time.Time) time.Time {
 func (h *Handler) handleFSM(ctx context.Context, m *tgbot.Message) error {
 	switch h.fsm.State(m.From.ID) {
 
-	case StateCreateTitleRU:
+	case fsm.StateCreateTitleRU:
 		h.fsm.Put(m.From.ID, "title_ru", m.Text)
 
 		// Пропускаем title_en
-		h.fsm.Set(m.From.ID, StateCreateDescRU)
+		h.fsm.Set(m.From.ID, fsm.StateCreateDescRU)
 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите описание RU:"))
 		return err
 
-	case StateCreateDescRU:
+	case fsm.StateCreateDescRU:
 		h.fsm.Put(m.From.ID, "description_ru", m.Text)
 
 		// Пропускаем description_en
-		h.fsm.Set(m.From.ID, StateCreateDates)
+		h.fsm.Set(m.From.ID, fsm.StateCreateDates)
 		examples := "Введите даты начала и завершения хайка (примеры: `10`, `10 12`, `10-12`, `31 3`, `03.02-04.02`, `15.12 16.12`)."
 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, examples))
 		return err
 
-	case StateCreateDates:
+	case fsm.StateCreateDates:
 		loc := h.loc
 		start, end, err := parseHikeDates(m.Text, time.Now().In(loc), loc)
 		if err != nil {
@@ -344,7 +380,7 @@ func (h *Handler) handleFSM(ctx context.Context, m *tgbot.Message) error {
 		h.fsm.Put(m.From.ID, "starts_at", start.Format("02.01.2006 15:04"))
 		h.fsm.Put(m.From.ID, "ends_at", end.Format("02.01.2006 15:04"))
 
-		h.fsm.Set(m.From.ID, StateConfirm)
+		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
 		preview := fmt.Sprintf(
 			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\n\nОтправьте 'ok' для сохранения или 'cancel' для отмены.",
@@ -355,7 +391,7 @@ func (h *Handler) handleFSM(ctx context.Context, m *tgbot.Message) error {
 		_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, preview))
 		return err
 
-	case StateConfirm:
+	case fsm.StateConfirm:
 		txt := strings.TrimSpace(strings.ToLower(m.Text))
 		if txt == "cancel" {
 			h.fsm.Reset(m.From.ID)
@@ -462,7 +498,7 @@ func (h *Handler) handleFSM(ctx context.Context, m *tgbot.Message) error {
 // 		h.fsm.Reset(m.From.ID)
 // 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Хайк создан!"))
 // 		return err
-		
+
 // 	default:
 // 		h.fsm.Reset(m.From.ID)
 // 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Сбросил состояние. Введите /newhike"))
@@ -519,13 +555,13 @@ func (h *Handler) showCard(ctx context.Context, q *tgbot.CallbackQuery, id int32
 	if hike.IsPublished {
 		pub = "✅ Да"
 		next = "0"
-		nextTxt = "🚫 Снять с публикации" 
+		nextTxt = "🚫 Снять с публикации"
 	}
 	text := fmt.Sprintf(
 		"🏔 %s\n%s → %s\nОпубликован: %s",
-		hike.TitleRu, 
-		format(hike.StartsAt), 
-		format(hike.EndsAt), 
+		hike.TitleRu,
+		format(hike.StartsAt),
+		format(hike.EndsAt),
 		pub,
 	)
 	kb := tgbot.NewInlineKeyboardMarkup(
@@ -549,8 +585,8 @@ func (h *Handler) editText(q *tgbot.CallbackQuery, text string, kb tgbot.InlineK
 	return err
 }
 
-func format(t time.Time) string { 
-	return t.Format("02 Jan 2006 15:04") 
+func format(t time.Time) string {
+	return t.Format("02 Jan 2006 15:04")
 }
 
 func btn(text, data string) tgbot.InlineKeyboardButton {

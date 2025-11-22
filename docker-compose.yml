@@ -82,7 +82,7 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_BOT_TOKEN: ${ADMIN_BOT_TOKEN}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
       DB_DSN: ${DB_DSN}
       REDIS_ADDR: redis:6379
