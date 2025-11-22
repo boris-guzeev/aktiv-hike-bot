@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARC=amd64 go build -o /bot ./cmd/bot
+RUN CGO_ENABLED=0 GOOS=linux GOARC=amd64 go build -o /bot ./cmd/admin-bot
 
 FROM gcr.io/distroless/base-debian12
 WORKDIR /app

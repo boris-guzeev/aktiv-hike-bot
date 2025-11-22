@@ -8,17 +8,17 @@ import (
 )
 
 type Config struct {
-	BotToken string
-	AdminChatID int64
-	DatabaseURL string
+	AdminBotToken string
+	AdminChatID   int64
+	DatabaseURL   string
 }
 
 func MustLoad() Config {
 	adminChat := mustParseInt64(getenv("ADMIN_CHAT_ID"))
 	return Config{
-		BotToken: getenv("BOT_TOKEN"),
-		AdminChatID: adminChat,
-		DatabaseURL: getenv("DB_DSN"),
+		AdminBotToken: getenv("ADMIN_BOT_TOKEN"),
+		AdminChatID:   adminChat,
+		DatabaseURL:   getenv("DB_DSN"),
 	}
 }
 
