@@ -11,16 +11,16 @@ import (
 )
 
 type router struct {
-	bot     *tgbot.BotAPI
-	chatID  int64
-	handler *handlers.Handler
+	bot         *tgbot.BotAPI
+	adminChatID int64
+	handler     *handlers.Handler
 }
 
 func NewRouter(l *time.Location, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *router {
 	return &router{
-		bot:     b,
-		chatID:  acID,
-		handler: handlers.New(l, b, q, acID),
+		bot:         b,
+		adminChatID: acID,
+		handler:     handlers.New(l, b, q, acID),
 	}
 }
 
@@ -43,5 +43,5 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 }
 
 func (r *router) Notifier() notify.Notifier {
-	return notify.New(r.bot, r.chatID)
+	return notify.New(r.bot, r.adminChatID)
 }
