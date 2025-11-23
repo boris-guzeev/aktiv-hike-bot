@@ -60,8 +60,7 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 	if m.IsCommand() {
 		switch m.Command() {
 		case "start":
-			// Ничего не делаем, чтобы не мешать /newhike и не показывать меню
-			return nil
+			return h.sendAdminMenu(m.Chat.ID)
 
 		case "help":
 			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Админ-помощь: /newhike — создать хайк, /hikes — список, /admin — меню."))
