@@ -47,12 +47,22 @@ func (h *Handler) IsAdmin(userID int64) bool {
 }
 
 func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
+	// Handle Back button
+	if m.Text == backButtonText && h.fsm.State(m.From.ID) != fsm.StateIdle {
+		h.fsm.Reset(m.From.ID)
+
+		msg := tgbot.NewMessage(m.Chat.ID, "Создание хайка отменено. Возвращаю в админ-меню.")
+		msg.ReplyMarkup = adminMenuKB()
+		_, err := h.bot.Send(msg)
+		return err
+	}
+
 	// FSM step. If is any active states
 	if st := h.fsm.State(m.From.ID); st != fsm.StateIdle && !m.IsCommand() {
 		return h.handleFSM(ctx, m)
 	}
 
-	// Commands
+	// Handle Commands
 	if m.IsCommand() {
 		switch m.Command() {
 		case "start":
@@ -66,16 +76,20 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 			return h.sendHikesList(m.Chat.ID)
 		case "newhike":
 			h.fsm.Set(m.From.ID, fsm.StateCreateTitleRU)
-			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите название RU:"))
+			msg := tgbot.NewMessage(m.Chat.ID, "Введите название RU:")
+			msg.ReplyMarkup = backKeyboard()
+			_, err := h.bot.Send(msg)
 			return err
 		}
 	}
 
-	// Reply Keyboard
+	// Handle Reply Keyboard
 	switch m.Text {
 	case "➕ Создать хайк":
 		h.fsm.Set(m.From.ID, fsm.StateCreateTitleRU)
-		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите название RU:"))
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите название RU:")
+		msg.ReplyMarkup = backKeyboard()
+		_, err := h.bot.Send(msg)
 		return err
 
 	case "📋 Список хайков":
@@ -97,7 +111,20 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 
 func (h *Handler) sendAdminMenu(chatID int64) error {
 	msg := tgbot.NewMessage(chatID, "Админ-меню. Выберите действие:")
-	msg.ReplyMarkup = tgbot.NewReplyKeyboard(
+	msg.ReplyMarkup = adminMenuKB()
+	_, err := h.bot.Send(msg)
+	return err
+}
+
+func (h *Handler) sendBackBtn(chatID int64, text string) error {
+	msg := tgbot.NewMessage(chatID, text)
+	msg.ReplyMarkup = backKeyboard()
+	_, err := h.bot.Send(msg)
+	return err
+}
+
+func adminMenuKB() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
 		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("➕ Создать хайк"),
 			tgbot.NewKeyboardButton("📋 Список хайков"),
@@ -106,58 +133,16 @@ func (h *Handler) sendAdminMenu(chatID int64) error {
 			tgbot.NewKeyboardButton("❓ Помощь"),
 		),
 	)
-
-	_, err := h.bot.Send(msg)
-	return err
 }
 
-func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
-	data := q.Data
+const backButtonText = "⬅️ Назад"
 
-	switch {
-	case data == "a:new":
-		// раньше тут не было return — добавляем, чтобы не продолжать обработку ниже
-		return h.startCreateHike(ctx, q)
-
-	case strings.HasPrefix(data, "a:list:actual"):
-		return h.showActual(ctx, q)
-
-	case strings.HasPrefix(data, "a:cart:"):
-		id, _ := strconv.Atoi(strings.TrimPrefix(data, "a:cart:"))
-		return h.showCard(ctx, q, int32(id))
-
-	case strings.HasPrefix(data, "a:pub:"):
-		parts := strings.Split(data, ":")
-		if len(parts) != 4 {
-			return nil
-		}
-		id64, _ := strconv.ParseInt(parts[2], 10, 32)
-		val := parts[3] == "1"
-		if err := h.queries.SetPublished(ctx, sqlc.SetPublishedParams{
-			ID:          int32(id64),
-			IsPublished: val,
-		}); err != nil {
-			_, _ = h.bot.Send(tgbot.NewCallback(q.ID, "Ошибка: не удалось обновить"))
-			return err
-		}
-		_, _ = h.bot.Request(tgbot.NewCallback(q.ID, "Готово"))
-		return h.showCard(ctx, q, int32(id64))
-	}
-	return nil
-}
-
-func (h *Handler) startCreateHike(ctx context.Context, q *tgbot.CallbackQuery) error {
-	_, _ = h.bot.Request(tgbot.NewCallback(q.ID, ""))
-
-	userID := q.From.ID
-	chatID := q.Message.Chat.ID
-
-	h.fsm.Reset(userID)
-	h.fsm.Set(userID, fsm.StateCreateTitleRU)
-
-	msg := tgbot.NewMessage(chatID, "🆕 Создание нового хайка.\n\nВведите название (RU):")
-	_, err := h.bot.Send(msg)
-	return err
+func backKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton(backButtonText),
+		),
+	)
 }
 
 func (h *Handler) saveCreatedHike(ctx context.Context, userID int64) error {
@@ -191,6 +176,7 @@ func (h *Handler) saveCreatedHike(ctx context.Context, userID int64) error {
 	return nil
 }
 
+// TODO: Вынести парсеры в отдельный файл
 func parseHikeDates(input string, now time.Time, loc *time.Location) (time.Time, time.Time, error) {
 	s := strings.TrimSpace(input)
 	s = strings.ReplaceAll(s, ",", " ")
