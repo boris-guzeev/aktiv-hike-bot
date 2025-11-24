@@ -42,12 +42,8 @@ func (h *Handler) IsAdmin(userID int64) bool {
 	if err != nil {
 		return false
 	}
-	switch m.Status {
-	case "creator", "administrator", "member":
-		return true
-	default:
-		return false
-	}
+
+	return m.Status != "left" && m.Status != "kicked"
 }
 
 func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
