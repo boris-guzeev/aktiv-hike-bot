@@ -164,6 +164,7 @@ func (h *Handler) saveCreatedHike(ctx context.Context, userID int64) error {
 		DescriptionRu: data["description_ru"],
 		StartsAt:      startAt,
 		EndsAt:        endsAt,
+		CreatedAt:     time.Now().In(h.loc),
 	}
 
 	// Create Hike
