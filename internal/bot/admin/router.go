@@ -34,9 +34,9 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 
 	// Private callbacks
 	if q := u.CallbackQuery; q != nil && q.Message.Chat.IsPrivate() {
-		// if r.adminHandler.IsAdmin(q.From.ID) {
-		// 	return r.adminHandler.HandleCallback(ctx, q)
-		// }
+		if r.handler.IsAdmin(q.From.ID) {
+			return r.handler.HandleListCallback(ctx, q)
+		}
 	}
 
 	return nil
