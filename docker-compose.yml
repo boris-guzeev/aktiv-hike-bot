@@ -86,7 +86,7 @@ services:
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
       DB_DSN: ${DB_DSN}
       REDIS_ADDR: redis:6379
-      TZ: "Asia/Tbilisi"
+      TZ: ${TZ}
     restart: unless-stopped
     networks:
       - app_net
