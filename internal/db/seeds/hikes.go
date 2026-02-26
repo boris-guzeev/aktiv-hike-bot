@@ -19,6 +19,9 @@ func New(q *sqlc.Queries, loc *time.Location) *Seeder {
 }
 
 func (s *Seeder) Seed(ctx context.Context) error {
+	now := time.Now().In(s.loc)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, s.loc)
+
 	hikes := []sqlc.CreateHikeParams{
 		// 1) Однодневный
 		{
@@ -29,8 +32,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{}, // пусто
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2025, 12, 7, 9, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2025, 12, 7, 19, 0, 0, 0, s.loc),
+			StartsAt:      func() time.Time {
+				startDay := today.AddDate(0, 0, 3)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			}(),
+			EndsAt:        func() time.Time {
+				endDay := today.AddDate(0, 0, 3)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			}(),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
@@ -44,8 +53,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2025, 12, 10, 10, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2025, 12, 10, 16, 30, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 10)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 10)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
@@ -59,8 +74,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2025, 12, 13, 8, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2025, 12, 14, 18, 0, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 14)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 15)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
@@ -74,8 +95,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2025, 12, 19, 7, 30, 0, 0, s.loc),
-			EndsAt:        time.Date(2025, 12, 21, 20, 0, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 15)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 17)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   false,
 			CreatedAt:     time.Now(),
 		},
@@ -89,8 +116,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2025, 12, 26, 9, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2025, 12, 29, 18, 0, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 19)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 22)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
@@ -103,8 +136,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2026, 1, 4, 9, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2026, 1, 4, 18, 30, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 23)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 23)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
@@ -118,8 +157,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2026, 1, 12, 9, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2026, 1, 19, 18, 0, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 25)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 31)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   false,
 			CreatedAt:     time.Now(),
 		},
@@ -133,8 +178,14 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      time.Date(2026, 2, 2, 9, 0, 0, 0, s.loc),
-			EndsAt:        time.Date(2026, 2, 10, 18, 0, 0, 0, s.loc),
+			StartsAt:      func () time.Time {
+				startDay := today.AddDate(0, 0, 32)
+				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
+			} (),
+			EndsAt:        func () time.Time {
+				endDay := today.AddDate(0, 0, 39)
+				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
+			} (),
 			IsPublished:   true,
 			CreatedAt:     time.Now(),
 		},
