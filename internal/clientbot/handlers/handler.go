@@ -24,17 +24,6 @@ const (
 )
 
 func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
-	if m.IsCommand() {
-		switch m.Command() {
-		case "start":
-			return h.sendMainMenu(m.Chat.ID)
-		case "help":
-			return h.sendHelp(m.Chat.ID)
-		default:
-			return h.sendMainMenu(m.Chat.ID)
-		}
-	}
-
 	switch strings.TrimSpace(m.Text) {
 	case btnActual:
 		return h.showActual(ctx, m.Chat.ID)
