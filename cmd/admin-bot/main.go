@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/bot/admin"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
@@ -44,7 +44,7 @@ func main() {
 	queries := sqlc.New(conn)
 
 	// Init router
-	r := admin.NewRouter(loc, bot, queries, cfg.AdminChatID)
+	r := adminbot.NewRouter(loc, bot, queries, cfg.AdminChatID)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30

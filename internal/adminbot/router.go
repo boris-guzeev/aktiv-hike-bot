@@ -1,11 +1,10 @@
-package admin
+package adminbot
 
 import (
 	"context"
 	"time"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/bot/admin/handlers"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/bot/notify"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/handlers"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -40,8 +39,4 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 	}
 
 	return nil
-}
-
-func (r *router) Notifier() notify.Notifier {
-	return notify.New(r.bot, r.adminChatID)
 }

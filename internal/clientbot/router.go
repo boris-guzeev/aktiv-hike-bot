@@ -1,10 +1,10 @@
-package client
+package clientbot
 
 import (
 	"context"
 	"time"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/bot/client/handlers"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/handlers"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
