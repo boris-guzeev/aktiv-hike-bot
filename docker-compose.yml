@@ -69,23 +69,45 @@ services:
       - app_net
     restart: no
 
-  bot:
+  admin-bot:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: aktivhike_bot
+      target: admin
+    container_name: admin_bot
     depends_on:
       db:
         condition: service_healthy
-      # redis:
-      #   condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      # redis:
+      #   condition: service_healthy
     environment:
       ADMIN_BOT_TOKEN: ${ADMIN_BOT_TOKEN}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
       DB_DSN: ${DB_DSN}
-      REDIS_ADDR: redis:6379
+      TZ: ${TZ}
+      # REDIS_ADDR: redis:6379
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  client-bot:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: client
+    container_name: client_bot
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      CLIENT_BOT_TOKEN: ${CLIENT_BOT_TOKEN}
+      DB_DSN: ${DB_DSN}
       TZ: ${TZ}
     restart: unless-stopped
     networks:
