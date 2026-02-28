@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/fsm"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

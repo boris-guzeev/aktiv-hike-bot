@@ -9,7 +9,7 @@ import (
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/seeds"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )

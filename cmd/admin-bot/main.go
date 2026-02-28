@@ -8,7 +8,7 @@ import (
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
 )

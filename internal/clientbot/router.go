@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/handlers"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

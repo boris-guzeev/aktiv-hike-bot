@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 

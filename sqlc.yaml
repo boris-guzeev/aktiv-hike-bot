@@ -1,14 +1,28 @@
 version: "2"
 sql:
   - schema: "internal/db/migrations"
-    queries: 
-      - "internal/db/queries/admin"
-      - "internal/db/queries/client"
+    queries: "internal/db/queries/admin"
     engine: "postgresql"
     gen:
       go:
-        package: "sqlc"
-        out: "internal/db/sqlc"
+        package: "admin"
+        out: "internal/db/sqlc/admin"
+        sql_package: "pgx/v5"
+        emit_interface: false
+        emit_db_tags: true
+        emit_json_tags: true
+        overrides:
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          - db_type: "numeric"
+            go_type: "github.com/jackc/pgx/v5/pgtype.Numeric"
+  - schema: "internal/db/migrations"
+    queries: "internal/db/queries/client"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "client"
+        out: "internal/db/sqlc/client"
         sql_package: "pgx/v5"
         emit_interface: false
         emit_db_tags: true

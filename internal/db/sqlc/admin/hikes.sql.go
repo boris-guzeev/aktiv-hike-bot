@@ -3,7 +3,7 @@
 //   sqlc v1.25.0
 // source: hikes.sql
 
-package sqlc
+package admin
 
 import (
 	"context"

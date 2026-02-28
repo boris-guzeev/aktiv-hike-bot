@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"context"
+	"html"
 	"strings"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc"
+	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -71,25 +72,53 @@ func (h *Handler) sendHelp(chatID int64) error {
 }
 
 func (h *Handler) showActual(ctx context.Context, chatID int64) error {
-	rows, err := h.queries.ListActualHikes(ctx, sqlc.ListActualHikesParams{Limit: 20, Offset: 0})
+	rows, err := h.queries.ListActualHikes(ctx, sqlc.ListActualHikesParams{
+		Limit: 20, Offset: 0,
+	})
 	if err != nil {
 		return err
 	}
+
 	if len(rows) == 0 {
 		_, err = h.bot.Send(tgbot.NewMessage(chatID, "Пока нет актуальных хайков."))
 		return err
 	}
-	var b strings.Builder
-	b.WriteString("🥾 <b>Актуальные хайки</b>\n\n")
-	for _, r := range rows {
-		b.WriteString("• ")
-		b.WriteString(r.TitleRu)
-		b.WriteString("\n")
+	
+	{
+		msg := tgbot.NewMessage(chatID, "🥾 <b>Актуальные хайки</b>")
+		msg.ParseMode = "HTML"
+		_, err = h.bot.Send(msg)
+		if err != nil {
+			return err
+		}
 	}
-	msg := tgbot.NewMessage(chatID, b.String())
-	msg.ParseMode = "HTML"
-	msg.DisableWebPagePreview = true
-	_, err = h.bot.Send(msg)
+
+	for _, r := range rows {
+		var b strings.Builder
+
+		// Title
+		b.WriteString("🏔 <b>")
+		b.WriteString(html.EscapeString(r.TitleRu))
+		b.WriteString("</b>\n")
+
+		// Starts At
+		b.WriteString("📅 ")
+		b.WriteString(r.StartsAt.Format("02 January 2006"))
+		b.WriteString("\n")
+
+		// Ends At
+		b.WriteString("📅 ")
+		b.WriteString(r.EndsAt.Format("02 January 2006"))
+		b.WriteString("\n")
+
+		// Description Ru
+		if r.DescriptionRu != "" {
+			b.WriteString("\n")
+			b.WriteString(html.EscapeString(r.DescriptionRu))
+			b.WriteString("\n")
+		}
+	}
+
 	return err
 }
 
