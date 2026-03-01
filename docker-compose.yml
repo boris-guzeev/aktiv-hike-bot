@@ -51,7 +51,6 @@ services:
 
   migrate:
     image: migrate/migrate:4
-    container_name: aktivhike_migrate
     depends_on:
       db:
         condition: service_healthy
@@ -67,7 +66,6 @@ services:
       DB_DSN: ${DB_DSN}
     networks:
       - app_net
-    restart: no
 
   admin-bot:
     platform: linux/amd64
