@@ -2,22 +2,24 @@ package clientbot
 
 import (
 	"context"
-	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/handlers"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 )
 
 type router struct {
+	log *logrus.Logger
 	bot *tgbot.BotAPI
 	handler     *handlers.Handler
 }
 
-func NewRouter(l *time.Location, b *tgbot.BotAPI, q *sqlc.Queries) *router {
+func NewRouter(l *logrus.Logger, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *router {
 	return &router{
+		log: l,
 		bot:         b,
-		handler:     handlers.New(b, q),
+		handler:     handlers.New(l, b, q, acID),
 	}
 }
 

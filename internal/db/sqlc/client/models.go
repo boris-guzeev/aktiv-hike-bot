@@ -11,12 +11,15 @@ import (
 )
 
 type Booking struct {
-	ID        int32       `db:"id" json:"id"`
-	HikeID    int32       `db:"hike_id" json:"hike_id"`
-	UserID    int32       `db:"user_id" json:"user_id"`
-	Status    string      `db:"status" json:"status"`
-	Note      pgtype.Text `db:"note" json:"note"`
-	CreatedAt time.Time   `db:"created_at" json:"created_at"`
+	ID              int32              `db:"id" json:"id"`
+	HikeID          int32              `db:"hike_id" json:"hike_id"`
+	UserID          int32              `db:"user_id" json:"user_id"`
+	Status          string             `db:"status" json:"status"`
+	Note            pgtype.Text        `db:"note" json:"note"`
+	CreatedAt       time.Time          `db:"created_at" json:"created_at"`
+	AssignedAdminID pgtype.Int4        `db:"assigned_admin_id" json:"assigned_admin_id"`
+	TakenAt         pgtype.Timestamptz `db:"taken_at" json:"taken_at"`
+	UpdatedAt       time.Time          `db:"updated_at" json:"updated_at"`
 }
 
 type Hike struct {

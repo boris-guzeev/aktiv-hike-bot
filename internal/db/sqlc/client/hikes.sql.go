@@ -8,7 +8,53 @@ package client
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createBookingPending = `-- name: CreateBookingPending :one
+INSERT INTO bookings (hike_id, user_id, status)
+VALUES ($1, $2, 'pending')
+ON CONFLICT (hike_id, user_id) DO NOTHING
+RETURNING id
+`
+
+type CreateBookingPendingParams struct {
+	HikeID int32 `db:"hike_id" json:"hike_id"`
+	UserID int32 `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CreateBookingPending(ctx context.Context, arg CreateBookingPendingParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createBookingPending, arg.HikeID, arg.UserID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getHike = `-- name: GetHike :one
+SELECT id, title_ru, starts_at, ends_at
+FROM hikes
+WHERE id = $1 AND is_published = true
+`
+
+type GetHikeRow struct {
+	ID       int32     `db:"id" json:"id"`
+	TitleRu  string    `db:"title_ru" json:"title_ru"`
+	StartsAt time.Time `db:"starts_at" json:"starts_at"`
+	EndsAt   time.Time `db:"ends_at" json:"ends_at"`
+}
+
+func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
+	row := q.db.QueryRow(ctx, getHike, id)
+	var i GetHikeRow
+	err := row.Scan(
+		&i.ID,
+		&i.TitleRu,
+		&i.StartsAt,
+		&i.EndsAt,
+	)
+	return i, err
+}
 
 const listActualHikes = `-- name: ListActualHikes :many
 SELECT id, title_ru, description_ru, starts_at, ends_at
@@ -55,4 +101,34 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertTgUser = `-- name: UpsertTgUser :one
+INSERT INTO tg_users (tg_user_id, tg_username, full_name, lang)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (tg_user_id)
+DO UPDATE SET
+    tg_username = EXCLUDED.tg_username,
+    full_name   = EXCLUDED.full_name,
+    lang        = EXCLUDED.lang
+RETURNING id
+`
+
+type UpsertTgUserParams struct {
+	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
+	FullName   pgtype.Text `db:"full_name" json:"full_name"`
+	Lang       string      `db:"lang" json:"lang"`
+}
+
+func (q *Queries) UpsertTgUser(ctx context.Context, arg UpsertTgUserParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertTgUser,
+		arg.TgUserID,
+		arg.TgUsername,
+		arg.FullName,
+		arg.Lang,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

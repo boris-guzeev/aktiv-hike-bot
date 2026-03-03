@@ -2,27 +2,35 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
-	"time"
+	"strconv"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	// TODO: init Logger
+	log := logrus.New()
+	// TODO: init Config
+	// TODO: собрать все переменные в конфиг
+	adminChatIdStr := os.Getenv("ADMIN_CHAT_ID")
+	adminChatId, err := strconv.ParseInt(adminChatIdStr, 10, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Init Context
 	ctx := context.Background()
 
 	// Init Location (Timezone)
-	loc, err := time.LoadLocation(os.Getenv("TZ"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	// loc, err := time.LoadLocation(os.Getenv("TZ"))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// Init TelegramBotAPI
 	botToken := os.Getenv("CLIENT_BOT_TOKEN")
@@ -44,7 +52,7 @@ func main() {
 	queries := sqlc.New(conn)
 
 	// Init router
-	r := clientbot.NewRouter(loc, bot, queries)
+	r := clientbot.NewRouter(log, bot, queries, adminChatId)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30
