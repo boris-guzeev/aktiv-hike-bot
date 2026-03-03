@@ -54,6 +54,8 @@ func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) er
 	switch {
 	case strings.HasPrefix(q.Data, "book_hike:"):
 		h.onCallbackBookHike(ctx, q)
+	case q.Data == "booking_sent":
+		h.replyCallback(q, "Заявка уже отправлена ✅")
 	}
 	return nil
 }
@@ -120,7 +122,7 @@ func (h *Handler) showActual(ctx context.Context, chatID int64) error {
 
 		kb := tgbot.NewInlineKeyboardMarkup(
 			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData("✅ Забронировать", fmt.Sprintf("book_hike:%d", r.ID)),
+				tgbot.NewInlineKeyboardButtonData("🥾 Забронировать", fmt.Sprintf("book_hike:%d", r.ID)),
 			),
 		)
 
@@ -155,6 +157,7 @@ func (h *Handler) onCallbackBookHike(ctx context.Context, q *tgbot.CallbackQuery
 	username := q.From.UserName
 	fullName := strings.TrimSpace(q.From.FirstName + " " + q.From.LastName)
 
+	// 1) Check if user exists
 	userID, err := h.queries.UpsertTgUser(ctx, sqlc.UpsertTgUserParams{
 		TgUserID:   tgUserID,
 		TgUsername: toPgText(username),
@@ -166,6 +169,7 @@ func (h *Handler) onCallbackBookHike(ctx context.Context, q *tgbot.CallbackQuery
 		return
 	}
 
+	// 2) Get Hike
 	hike, err := h.queries.GetHike(ctx, hikeID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -176,6 +180,7 @@ func (h *Handler) onCallbackBookHike(ctx context.Context, q *tgbot.CallbackQuery
 		return
 	}
 
+	// 3) Create booking and set status to pending
 	bookingID, err := h.queries.CreateBookingPending(ctx, sqlc.CreateBookingPendingParams{
 		HikeID: hikeID,
 		UserID: userID,
@@ -189,8 +194,31 @@ func (h *Handler) onCallbackBookHike(ctx context.Context, q *tgbot.CallbackQuery
 		return
 	}
 
+	// 4) Change inline-button text
+	newKb := tgbot.NewInlineKeyboardMarkup(
+		tgbot.NewInlineKeyboardRow(
+			tgbot.NewInlineKeyboardButtonData(
+				"⏳ Запрос отправлен",
+				"booking_sent",
+				//fmt.Sprintf("book_hike:%d", hikeID),
+			),
+		),
+	)
+
+	// 5) Send new Message with changed button
+	edit := tgbot.NewEditMessageReplyMarkup(
+		q.Message.Chat.ID,
+		q.Message.MessageID,
+		newKb,
+	)
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error(err)
+	}
+	
+	// 8) Info user if hike is booked successfully
 	h.replyCallback(q, "Ваша заявка отправлена ✅ Мы передали её менеджерам.")
 
+	// 9) Form and send admin message
 	msg := formatAdminBookingMessage(hike, bookingID, tgUserID, username, fullName)
 	adminMsg := tgbot.NewMessage(h.adminChatID, msg)
 	adminMsg.ParseMode = "HTML"
