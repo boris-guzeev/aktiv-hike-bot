@@ -50,6 +50,7 @@ func (h *Handler) HandleMessage(ctx context.Context, m *tgbot.Message) error {
 	}
 }
 
+// Handles client-bot inline-buttons clicks
 func (h *Handler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
 	switch {
 	case strings.HasPrefix(q.Data, "book_hike:"):
@@ -219,12 +220,17 @@ func (h *Handler) onCallbackBookHike(ctx context.Context, q *tgbot.CallbackQuery
 	h.replyCallback(q, "Ваша заявка отправлена ✅ Мы передали её менеджерам.")
 
 	// 9) Form and send admin message
-	msg := formatAdminBookingMessage(hike, bookingID, tgUserID, username, fullName)
-	adminMsg := tgbot.NewMessage(h.adminChatID, msg)
-	adminMsg.ParseMode = "HTML"
-	adminMsg.DisableWebPagePreview = true
+	msg := tgbot.NewMessage(h.adminChatID, formatAdminBookingMessage(
+		hike, 
+		bookingID, 
+		tgUserID, 
+		username, 
+		fullName,
+	))
+	msg.ParseMode = "HTML"
+	msg.ReplyMarkup = adminBookingKeyboard(bookingID)
 
-	if _, err := h.bot.Send(adminMsg); err != nil {
+	if _, err := h.bot.Send(msg); err != nil {
 		h.log.Errorf("failed to send admin message to chat=%v: %v", h.adminChatID, err)
 	}
 }
@@ -277,6 +283,17 @@ func formatAdminBookingMessage(
 		unameLine,
 		tgUserID,
 		bookingID,
+	)
+}
+
+func adminBookingKeyboard(bookingID int32) tgbot.InlineKeyboardMarkup {
+	return tgbot.NewInlineKeyboardMarkup(
+		tgbot.NewInlineKeyboardRow(
+			tgbot.NewInlineKeyboardButtonData(
+				"🟢 Взять в работу",
+				fmt.Sprintf("booking_take_%d", bookingID),
+			),
+		),
 	)
 }
 
