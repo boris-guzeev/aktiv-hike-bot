@@ -34,11 +34,11 @@ func main() {
 
 	// Init TelegramBotAPI
 	botToken := os.Getenv("CLIENT_BOT_TOKEN")
-	bot, err := tgbot.NewBotAPI(botToken)
+	clientBot, err := tgbot.NewBotAPI(botToken)
 	if err != nil {
 		log.Fatal(err)
 	}
-	bot.Debug = false
+	clientBot.Debug = false
 
 	// Init DB
 	dbDsn := os.Getenv("DB_DSN")
@@ -52,12 +52,12 @@ func main() {
 	queries := sqlc.New(conn)
 
 	// Init router
-	r := clientbot.NewRouter(log, bot, queries, adminChatId)
+	r := clientbot.NewRouter(log, clientBot, queries, adminChatId)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30
 
-	updates := bot.GetUpdatesChan(u)
+	updates := clientBot.GetUpdatesChan(u)
 	for upd := range updates {
 		if err := r.Route(ctx, upd); err != nil {
 			log.Printf("route error: %v", err)
