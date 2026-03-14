@@ -1,0 +1,4 @@
+CREATE TABLE admins (
+    id SERIAL PRIMARY KEY REFERENCES telegram_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)

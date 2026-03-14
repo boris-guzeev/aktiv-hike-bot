@@ -10,16 +10,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Admin struct {
+	ID        int32     `db:"id" json:"id"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
 type Booking struct {
-	ID              int32              `db:"id" json:"id"`
-	HikeID          int32              `db:"hike_id" json:"hike_id"`
-	UserID          int32              `db:"user_id" json:"user_id"`
-	Status          string             `db:"status" json:"status"`
-	Note            pgtype.Text        `db:"note" json:"note"`
-	CreatedAt       time.Time          `db:"created_at" json:"created_at"`
-	AssignedAdminID pgtype.Int4        `db:"assigned_admin_id" json:"assigned_admin_id"`
-	TakenAt         pgtype.Timestamptz `db:"taken_at" json:"taken_at"`
-	UpdatedAt       time.Time          `db:"updated_at" json:"updated_at"`
+	ID             int32              `db:"id" json:"id"`
+	HikeID         int32              `db:"hike_id" json:"hike_id"`
+	UserID         int32              `db:"user_id" json:"user_id"`
+	Status         string             `db:"status" json:"status"`
+	Note           pgtype.Text        `db:"note" json:"note"`
+	CreatedAt      time.Time          `db:"created_at" json:"created_at"`
+	TakenByAdminID pgtype.Int4        `db:"taken_by_admin_id" json:"taken_by_admin_id"`
+	TakenAt        pgtype.Timestamptz `db:"taken_at" json:"taken_at"`
+	UpdatedAt      time.Time          `db:"updated_at" json:"updated_at"`
 }
 
 type Hike struct {
@@ -46,7 +51,7 @@ type Payment struct {
 	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
 }
 
-type TgUser struct {
+type TelegramUser struct {
 	ID         int32       `db:"id" json:"id"`
 	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
 	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`

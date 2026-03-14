@@ -10,28 +10,36 @@ import (
 )
 
 type router struct {
-	log *logrus.Logger
-	bot *tgbot.BotAPI
+	log         *logrus.Logger
+	bot         *tgbot.BotAPI
+	adminChatID int64
 	handler     *handlers.Handler
 }
 
 func NewRouter(l *logrus.Logger, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *router {
 	return &router{
-		log: l,
+		log:         l,
 		bot:         b,
+		adminChatID: acID,
 		handler:     handlers.New(l, b, q, acID),
 	}
 }
 
 func (r *router) Route(ctx context.Context, u tgbot.Update) error {
-	// Private commands
+	// Private messages -> client flow
 	if m := u.Message; m != nil && m.Chat.IsPrivate() {
-		return r.handler.HandleMessage(ctx, m)
+		return r.handler.HandleClientMessage(ctx, m)
 	}
 
-	// Private callbacks
+	// Private callbacks -> client flow
 	if q := u.CallbackQuery; q != nil && q.Message.Chat.IsPrivate() {
-		return r.handler.HandleCallback(ctx, q)
+		return r.handler.HandleClientCallback(ctx, q)
+	}
+
+	r.log.Info("ok")
+	// Admin chat callbacks -> admin flow
+	if q := u.CallbackQuery; q != nil && q.Message.Chat.ID == r.adminChatID {
+		return r.handler.HandleAdminCallback(ctx, q)
 	}
 
 	return nil

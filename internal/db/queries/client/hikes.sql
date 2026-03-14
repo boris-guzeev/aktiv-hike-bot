@@ -5,8 +5,8 @@ WHERE is_published = true AND ends_at >= now()
 ORDER BY starts_at ASC
 LIMIT $1 OFFSET $2;
 
--- name: UpsertTgUser :one
-INSERT INTO tg_users (tg_user_id, tg_username, full_name, lang)
+-- name: UpsertTelegramUser :one
+INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (tg_user_id)
 DO UPDATE SET
@@ -14,6 +14,11 @@ DO UPDATE SET
     full_name   = EXCLUDED.full_name,
     lang        = EXCLUDED.lang
 RETURNING id;
+
+-- name: CreateAdminIfNotExists :exec
+INSERT INTO admins (id)
+VALUES ($1)
+ON CONFLICT DO NOTHING;
 
 -- name: GetHike :one
 SELECT id, title_ru, starts_at, ends_at
@@ -24,4 +29,12 @@ WHERE id = $1 AND is_published = true;
 INSERT INTO bookings (hike_id, user_id, status)
 VALUES ($1, $2, 'pending')
 ON CONFLICT (hike_id, user_id) DO NOTHING
+RETURNING id;
+
+-- name: TakeBookingInProgress :one
+UPDATE bookings
+SET
+    status = 'in_progress',
+    taken_by_admin_id = $2
+WHERE id = $1 AND status = 'pending'
 RETURNING id;

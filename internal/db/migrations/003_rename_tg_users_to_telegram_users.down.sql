@@ -1,0 +1,1 @@
+ALTER TABLE telegram_users RENAME TO tg_users;

@@ -12,6 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createAdminIfNotExists = `-- name: CreateAdminIfNotExists :exec
+INSERT INTO admins (id)
+VALUES ($1)
+ON CONFLICT DO NOTHING
+`
+
+func (q *Queries) CreateAdminIfNotExists(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, createAdminIfNotExists, id)
+	return err
+}
+
 const createBookingPending = `-- name: CreateBookingPending :one
 INSERT INTO bookings (hike_id, user_id, status)
 VALUES ($1, $2, 'pending')
@@ -103,8 +114,29 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 	return items, nil
 }
 
-const upsertTgUser = `-- name: UpsertTgUser :one
-INSERT INTO tg_users (tg_user_id, tg_username, full_name, lang)
+const takeBookingInProgress = `-- name: TakeBookingInProgress :one
+UPDATE bookings
+SET
+    status = 'in_progress',
+    taken_by_admin_id = $2
+WHERE id = $1 AND status = 'pending'
+RETURNING id
+`
+
+type TakeBookingInProgressParams struct {
+	ID             int32       `db:"id" json:"id"`
+	TakenByAdminID pgtype.Int4 `db:"taken_by_admin_id" json:"taken_by_admin_id"`
+}
+
+func (q *Queries) TakeBookingInProgress(ctx context.Context, arg TakeBookingInProgressParams) (int32, error) {
+	row := q.db.QueryRow(ctx, takeBookingInProgress, arg.ID, arg.TakenByAdminID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const upsertTelegramUser = `-- name: UpsertTelegramUser :one
+INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (tg_user_id)
 DO UPDATE SET
@@ -114,15 +146,15 @@ DO UPDATE SET
 RETURNING id
 `
 
-type UpsertTgUserParams struct {
+type UpsertTelegramUserParams struct {
 	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
 	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
 	FullName   pgtype.Text `db:"full_name" json:"full_name"`
 	Lang       string      `db:"lang" json:"lang"`
 }
 
-func (q *Queries) UpsertTgUser(ctx context.Context, arg UpsertTgUserParams) (int32, error) {
-	row := q.db.QueryRow(ctx, upsertTgUser,
+func (q *Queries) UpsertTelegramUser(ctx context.Context, arg UpsertTelegramUserParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertTelegramUser,
 		arg.TgUserID,
 		arg.TgUsername,
 		arg.FullName,
