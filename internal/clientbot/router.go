@@ -36,7 +36,6 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 		return r.handler.HandleClientCallback(ctx, q)
 	}
 
-	r.log.Info("ok")
 	// Admin chat callbacks -> admin flow
 	if q := u.CallbackQuery; q != nil && q.Message.Chat.ID == r.adminChatID {
 		return r.handler.HandleAdminCallback(ctx, q)

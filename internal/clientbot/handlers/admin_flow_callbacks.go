@@ -24,10 +24,9 @@ func (h *Handler) HandleAdminCallback(ctx context.Context, q *tgbot.CallbackQuer
 
 func (h *Handler) handleTakeBooking(ctx context.Context, q *tgbot.CallbackQuery) error {
 	if q == nil || q.From == nil || q.Message == nil {
-		h.log.Info("q nil: ", q.Data)
 		return nil
 	}
-	h.log.Info(q.Data)
+
 	// Ensure telegram user (admin) exists
 	tgUserID := q.From.ID
 	tgUserName := q.From.UserName
@@ -56,7 +55,6 @@ func (h *Handler) handleTakeBooking(ctx context.Context, q *tgbot.CallbackQuery)
 	}
 	bookingID := int32(bookingID64)
 
-	h.log.Info("bookingID: ", bookingID)
 	_, err = h.queries.TakeBookingInProgress(ctx, client.TakeBookingInProgressParams{
 		ID:             bookingID,
 		TakenByAdminID: toPgInt4(userID),
