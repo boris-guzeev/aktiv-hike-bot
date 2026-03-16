@@ -23,20 +23,20 @@ func (q *Queries) CreateAdminIfNotExists(ctx context.Context, id int32) error {
 	return err
 }
 
-const createBookingPending = `-- name: CreateBookingPending :one
+const createBookingNew = `-- name: CreateBookingNew :one
 INSERT INTO bookings (hike_id, user_id, status)
-VALUES ($1, $2, 'pending')
+VALUES ($1, $2, 'new')
 ON CONFLICT (hike_id, user_id) DO NOTHING
 RETURNING id
 `
 
-type CreateBookingPendingParams struct {
+type CreateBookingNewParams struct {
 	HikeID int32 `db:"hike_id" json:"hike_id"`
 	UserID int32 `db:"user_id" json:"user_id"`
 }
 
-func (q *Queries) CreateBookingPending(ctx context.Context, arg CreateBookingPendingParams) (int32, error) {
-	row := q.db.QueryRow(ctx, createBookingPending, arg.HikeID, arg.UserID)
+func (q *Queries) CreateBookingNew(ctx context.Context, arg CreateBookingNewParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createBookingNew, arg.HikeID, arg.UserID)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
@@ -119,7 +119,7 @@ UPDATE bookings
 SET
     status = 'in_progress',
     taken_by_admin_id = $2
-WHERE id = $1 AND status = 'pending'
+WHERE id = $1 AND status = 'new'
 RETURNING id
 `
 

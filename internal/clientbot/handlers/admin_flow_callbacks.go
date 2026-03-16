@@ -47,7 +47,7 @@ func (h *Handler) handleTakeBooking(ctx context.Context, q *tgbot.CallbackQuery)
 		return err
 	}
 
-	// Take booking
+	// Get booking ID
 	strBookingID := strings.TrimPrefix(q.Data, "booking_take:")
 	bookingID64, err := strconv.ParseInt(strBookingID, 10, 32)
 	if err != nil {
@@ -55,28 +55,30 @@ func (h *Handler) handleTakeBooking(ctx context.Context, q *tgbot.CallbackQuery)
 	}
 	bookingID := int32(bookingID64)
 
+	// Take booking by admin
 	_, err = h.queries.TakeBookingInProgress(ctx, client.TakeBookingInProgressParams{
 		ID:             bookingID,
 		TakenByAdminID: toPgInt4(userID),
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.replyCallback(q, "Эту заявку уже взял другой менеджер.")
+			h.replyCallback(q, "Эту заявку уже взяли в работу.")
 			return nil
 		}
 		return err
 	}
 
 	// Update admin-group booking button message
-	err = h.updateBookingTakenMessage(q, tgFullName, tgUserName)
+	err = h.updateBookingTakenMessage(q, bookingID, tgFullName, tgUserName)
 	if err != nil {
 		h.log.Errorf("failed to update admin booking message: %v", err)
 	}
 
+	// Send to admin
 	return nil
 }
 
-func (h *Handler) updateBookingTakenMessage(q *tgbot.CallbackQuery, fullName, username string) error {
+func (h *Handler) updateBookingTakenMessage(q *tgbot.CallbackQuery, bookingID int32, fullName, username string) error {
 	managerName := strings.TrimSpace(fullName)
 	if managerName == "" {
 		managerName = "Менеджер"
@@ -88,30 +90,26 @@ func (h *Handler) updateBookingTakenMessage(q *tgbot.CallbackQuery, fullName, us
 		managerLine = fmt.Sprintf("%s (@%s)", managerName, username)
 	}
 
-	statusLine := fmt.Sprintf(
-		"\n\n🟡 <b>Взято в работу</b>\n%s",
-		html.EscapeString(managerLine),
-	)
-
 	text := q.Message.Text
 	if text == "" {
 		text = q.Message.Caption
 	}
 
-	if strings.Contains(text, "🟡 <b>Взято в работу</b>") {
-		return nil
+	statusLine := fmt.Sprintf(
+		"\n\n🟡 <b>Взято в работу менеджером</b>\n%s",
+		html.EscapeString(managerLine),
+	)
+
+	if !strings.Contains(text, "🟡 <b>Взято в работу</b>") {
+		text += statusLine
 	}
 
 	edit := tgbot.NewEditMessageText(
 		q.Message.Chat.ID,
 		q.Message.MessageID,
-		text+statusLine,
+		text,
 	)
 	edit.ParseMode = tgbot.ModeHTML
-	edit.ReplyMarkup = &tgbot.InlineKeyboardMarkup{
-		InlineKeyboard: [][]tgbot.InlineKeyboardButton{},
-	}
-
 	_, err := h.bot.Request(edit)
 	return err
 }

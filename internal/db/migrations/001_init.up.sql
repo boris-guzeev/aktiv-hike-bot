@@ -30,7 +30,7 @@ CREATE TABLE bookings (
   id         SERIAL PRIMARY KEY,
   hike_id    INT NOT NULL REFERENCES hikes(id) ON DELETE RESTRICT,
   user_id    INT NOT NULL REFERENCES tg_users(id) ON DELETE RESTRICT,
-  status     TEXT NOT NULL DEFAULT 'pending', -- pending|approved|rejected|cancelled
+  status     TEXT NOT NULL DEFAULT 'new', -- new|approved|rejected|cancelled
   note       TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(hike_id, user_id)

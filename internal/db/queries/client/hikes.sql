@@ -25,9 +25,9 @@ SELECT id, title_ru, starts_at, ends_at
 FROM hikes
 WHERE id = $1 AND is_published = true; 
 
--- name: CreateBookingPending :one
+-- name: CreateBookingNew :one
 INSERT INTO bookings (hike_id, user_id, status)
-VALUES ($1, $2, 'pending')
+VALUES ($1, $2, 'new')
 ON CONFLICT (hike_id, user_id) DO NOTHING
 RETURNING id;
 
@@ -36,5 +36,5 @@ UPDATE bookings
 SET
     status = 'in_progress',
     taken_by_admin_id = $2
-WHERE id = $1 AND status = 'pending'
+WHERE id = $1 AND status = 'new'
 RETURNING id;

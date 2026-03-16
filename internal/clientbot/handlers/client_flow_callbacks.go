@@ -59,8 +59,8 @@ func (h *Handler) onClientBookHike(ctx context.Context, q *tgbot.CallbackQuery) 
 		return
 	}
 
-	// 3) Create booking and set status to pending
-	bookingID, err := h.queries.CreateBookingPending(ctx, sqlc.CreateBookingPendingParams{
+	// 3) Create booking and set status to new
+	bookingID, err := h.queries.CreateBookingNew(ctx, sqlc.CreateBookingNewParams{
 		HikeID: hikeID,
 		UserID: userID,
 	})
