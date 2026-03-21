@@ -5,22 +5,22 @@ import "sync"
 type State string
 
 const (
-	StateIdle State = "idle"
+	StateIdle          State = "idle"
 	StateCreateTitleRU State = "create_title_ru"
 	StateCreateTitleEN State = "create_title_en"
-	StateCreateDescRU State = "create_desc_ru"
-	StateCreateDescEN State = "create_desc_en"
-	StateCreateDates State = "create_dates"
-	StateConfirm State = "confirm"
+	StateCreateDescRU  State = "create_desc_ru"
+	StateCreateDescEN  State = "create_desc_en"
+	StateCreateDates   State = "create_dates"
+	StateConfirm       State = "confirm"
 )
 
 type session struct {
 	State State
-	Data map[string]string
+	Data  map[string]string
 }
 
 type FSM struct {
-	mu sync.Mutex
+	mu           sync.Mutex
 	userSessions map[int64]*session
 }
 
@@ -47,7 +47,7 @@ func (f *FSM) Set(userID int64, st State) {
 	s, ok := f.userSessions[userID]
 	if !ok {
 		s = &session{
-			Data: map[string]string{},	
+			Data: map[string]string{},
 		}
 		f.userSessions[userID] = s
 	}

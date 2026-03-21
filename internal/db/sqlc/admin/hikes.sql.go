@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createHike = `-- name: CreateHike :one
+const createHike = `-- name: CreateHike :exec
 INSERT INTO hikes (
     title_ru, 
     title_en, 
@@ -24,7 +24,6 @@ INSERT INTO hikes (
     is_published,
     created_at
 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at
 `
 
 type CreateHikeParams struct {
@@ -39,8 +38,8 @@ type CreateHikeParams struct {
 	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
 }
 
-func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (Hike, error) {
-	row := q.db.QueryRow(ctx, createHike,
+func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) error {
+	_, err := q.db.Exec(ctx, createHike,
 		arg.TitleRu,
 		arg.TitleEn,
 		arg.DescriptionRu,
@@ -51,21 +50,7 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (Hike, e
 		arg.IsPublished,
 		arg.CreatedAt,
 	)
-	var i Hike
-	err := row.Scan(
-		&i.ID,
-		&i.TitleRu,
-		&i.TitleEn,
-		&i.DescriptionRu,
-		&i.DescriptionEn,
-		&i.StartsAt,
-		&i.EndsAt,
-		&i.PhotoFileID,
-		&i.IsPublished,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	return err
 }
 
 const deleteHike = `-- name: DeleteHike :exec

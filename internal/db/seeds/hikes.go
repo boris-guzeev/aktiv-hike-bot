@@ -32,16 +32,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{}, // пусто
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func() time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 3)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
 			}(),
-			EndsAt:        func() time.Time {
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 3)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 
 		// 2) Однодневный
@@ -53,16 +53,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 10)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 10)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 
 		// 3) Двухдневный
@@ -74,16 +74,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 14)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 15)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 
 		// 4) Трёхдневный
@@ -95,16 +95,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 15)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 17)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   false,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: false,
+			CreatedAt:   time.Now(),
 		},
 
 		// 5) Четырёхдневный
@@ -116,16 +116,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 19)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 22)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 
 		// 6) Однодневный
@@ -136,16 +136,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 23)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 23)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 
 		// 7) Недельный поход (7 дней)
@@ -157,16 +157,16 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 25)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 31)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   false,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: false,
+			CreatedAt:   time.Now(),
 		},
 
 		// 8) Длинный маршрут 8 дней
@@ -178,21 +178,21 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			TitleEn:       pgtype.Text{},
 			DescriptionEn: pgtype.Text{},
 			PhotoFileID:   pgtype.Text{},
-			StartsAt:      func () time.Time {
+			StartsAt: func() time.Time {
 				startDay := today.AddDate(0, 0, 32)
 				return time.Date(startDay.Year(), startDay.Month(), startDay.Day(), 8, 0, 0, 0, s.loc)
-			} (),
-			EndsAt:        func () time.Time {
+			}(),
+			EndsAt: func() time.Time {
 				endDay := today.AddDate(0, 0, 39)
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
-			} (),
-			IsPublished:   true,
-			CreatedAt:     time.Now(),
+			}(),
+			IsPublished: true,
+			CreatedAt:   time.Now(),
 		},
 	}
 
 	for _, h := range hikes {
-		_, err := s.q.CreateHike(ctx, h)
+		err := s.q.CreateHike(ctx, h)
 		if err != nil {
 			return fmt.Errorf("failed to seed hike %s: %w", h.TitleRu, err)
 		}

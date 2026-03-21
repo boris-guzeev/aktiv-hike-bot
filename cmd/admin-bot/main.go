@@ -2,19 +2,29 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot"
+	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
+	hikeRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/repository"
+	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	// TODO: init Logger
+	// TODO: вынести логгер отдельно
+	var log = logrus.New()
+	log.Formatter = new(logrus.JSONFormatter)
+	log.Formatter = new(logrus.TextFormatter)                     //default
+	log.Formatter.(*logrus.TextFormatter).DisableColors = true    // remove colors
+	log.Formatter.(*logrus.TextFormatter).DisableTimestamp = true // remove timestamp from test output
+	log.Level = logrus.TraceLevel
+	log.Out = os.Stdout
 
 	// Init Context and Config
 	ctx := context.Background()
@@ -43,8 +53,14 @@ func main() {
 	// Init SQLC
 	queries := sqlc.New(conn)
 
+	// Init application dependencies
+	// --- Hike --- /
+	hikeRep := hikeRepository.New(queries)
+	hikeSvc := hikeService.New(hikeRep)
+	hikeHnd := hikeHandler.New(bot, hikeSvc, loc)
+
 	// Init router
-	r := adminbot.NewRouter(loc, bot, queries, cfg.AdminChatID)
+	r := adminbot.NewRouter(bot, cfg.AdminChatID, hikeHnd)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30

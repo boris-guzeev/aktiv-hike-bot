@@ -1,4 +1,4 @@
--- name: CreateHike :one
+-- name: CreateHike :exec
 INSERT INTO hikes (
     title_ru, 
     title_en, 
@@ -9,8 +9,7 @@ INSERT INTO hikes (
     photo_file_id, 
     is_published,
     created_at
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-RETURNING *;
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);
 
 -- name: UpdateHike :one
 UPDATE hikes SET
