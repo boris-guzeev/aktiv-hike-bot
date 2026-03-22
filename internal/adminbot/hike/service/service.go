@@ -46,13 +46,13 @@ func (s service) GetHike(ctx context.Context, id int32) (Hike, error) {
 	return s.repo.GetHike(ctx, id)
 }
 
-func (s service) ListHikes(ctx context.Context, size, page int32) ([]Hike, error) {
-	offset := (page - 1) * page
+func (s service) ListHikes(ctx context.Context, page, size int32) ([]Hike, error) {
+	offset := (page - 1) * size
 	return s.repo.ListHikes(ctx, size, offset)
 }
 
-func (s service) ListActualHikes(ctx context.Context, size, page int32) ([]Hike, error) {
-	offset := (page - 1) * page
+func (s service) ListActualHikes(ctx context.Context, page, size int32) ([]Hike, error) {
+	offset := (page - 1) * size
 	return s.repo.ListActualHikes(ctx, size, offset)
 }
 
