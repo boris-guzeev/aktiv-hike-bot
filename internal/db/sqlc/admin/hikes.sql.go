@@ -21,9 +21,8 @@ INSERT INTO hikes (
     starts_at, 
     ends_at, 
     photo_file_id, 
-    is_published,
-    created_at
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    is_published
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 `
 
 type CreateHikeParams struct {
@@ -35,7 +34,6 @@ type CreateHikeParams struct {
 	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
 	PhotoFileID   pgtype.Text `db:"photo_file_id" json:"photo_file_id"`
 	IsPublished   bool        `db:"is_published" json:"is_published"`
-	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) error {
@@ -48,7 +46,6 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) error {
 		arg.EndsAt,
 		arg.PhotoFileID,
 		arg.IsPublished,
-		arg.CreatedAt,
 	)
 	return err
 }

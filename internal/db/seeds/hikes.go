@@ -41,7 +41,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 
 		// 2) Однодневный
@@ -62,7 +61,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 
 		// 3) Двухдневный
@@ -83,7 +81,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 
 		// 4) Трёхдневный
@@ -104,7 +101,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: false,
-			CreatedAt:   time.Now(),
 		},
 
 		// 5) Четырёхдневный
@@ -125,7 +121,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 
 		// 6) Однодневный
@@ -145,7 +140,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 
 		// 7) Недельный поход (7 дней)
@@ -166,7 +160,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: false,
-			CreatedAt:   time.Now(),
 		},
 
 		// 8) Длинный маршрут 8 дней
@@ -187,7 +180,6 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				return time.Date(endDay.Year(), endDay.Month(), endDay.Day(), 22, 0, 0, 0, s.loc)
 			}(),
 			IsPublished: true,
-			CreatedAt:   time.Now(),
 		},
 	}
 

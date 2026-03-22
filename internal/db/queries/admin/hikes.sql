@@ -7,9 +7,8 @@ INSERT INTO hikes (
     starts_at, 
     ends_at, 
     photo_file_id, 
-    is_published,
-    created_at
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+    is_published
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
 
 -- name: UpdateHike :one
 UPDATE hikes SET
