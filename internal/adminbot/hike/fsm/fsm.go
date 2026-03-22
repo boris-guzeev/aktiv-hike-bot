@@ -11,6 +11,7 @@ const (
 	StateCreateDescRU  State = "create_desc_ru"
 	StateCreateDescEN  State = "create_desc_en"
 	StateCreateDates   State = "create_dates"
+	StateCreatePhoto   State = "create_photo"
 	StateConfirm       State = "confirm"
 )
 

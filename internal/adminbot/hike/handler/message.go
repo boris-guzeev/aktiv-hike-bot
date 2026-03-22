@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
 	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
@@ -71,20 +70,33 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		h.fsm.Put(m.From.ID, "starts_at", start.Format("02.01.2006 15:04"))
 		h.fsm.Put(m.From.ID, "ends_at", end.Format("02.01.2006 15:04"))
 
+		h.fsm.Set(m.From.ID, fsm.StateCreatePhoto)
+
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Загрузите фото:"))
+		return err
+
+	case fsm.StateCreatePhoto:
+		if len(m.Photo) == 0 {
+			_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Пожалуйста, отправьте именно фото."))
+			return nil
+		}
+		photo := m.Photo[len(m.Photo)-1]
+		h.fsm.Put(m.From.ID, "photo_file_id", photo.FileID)
+
 		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
 		preview := fmt.Sprintf(
-			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\n\nОтправьте 'ok' для сохранения или 'cancel' для отмены или нажмите нужную клавишу на клавиатуре.",
+			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\nФото: добавлено\n\nОтправьте 'ok' для сохранения или 'cancel' для отмены или нажмите Подтвердить/Отмена на клавиатуре.",
 			h.fsm.Data(m.From.ID)["title_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
-			common.Format(start), common.Format(end),
+			h.fsm.Data(m.From.ID)["starts_at"],
+			h.fsm.Data(m.From.ID)["ends_at"],
 		)
 
 		msg := tgbot.NewMessage(m.Chat.ID, preview)
 		msg.ReplyMarkup = hikeUI.ConfirmKeyboard()
 
-		_, err = h.bot.Send(msg)
-
+		_, err := h.bot.Send(msg)
 		return err
 
 	case fsm.StateConfirm:
@@ -134,6 +146,7 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 		DescriptionRu: data["description_ru"],
 		StartsAt:      startAt,
 		EndsAt:        endsAt,
+		PhotoFileID:   data["photo_file_id"],
 	}
 
 	// Create Hike

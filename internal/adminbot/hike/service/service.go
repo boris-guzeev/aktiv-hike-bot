@@ -11,6 +11,7 @@ type Hike struct {
 	DescriptionRu string
 	StartsAt      time.Time
 	EndsAt        time.Time
+	PhotoFileID   string
 	IsPublished   bool
 }
 

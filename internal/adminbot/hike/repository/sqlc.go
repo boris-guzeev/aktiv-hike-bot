@@ -5,6 +5,7 @@ import (
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type repository struct {
@@ -97,10 +98,16 @@ func (r repository) DeleteHike(ctx context.Context, id int32) error {
 }
 
 func (r repository) CreateHike(ctx context.Context, hike service.Hike) error {
+	photoFileID := pgtype.Text{
+		String: hike.PhotoFileID,
+		Valid:  hike.PhotoFileID != "",
+	}
+
 	return r.queries.CreateHike(ctx, admin.CreateHikeParams{
 		TitleRu:       hike.TitleRu,
 		DescriptionRu: hike.DescriptionRu,
 		StartsAt:      hike.StartsAt,
 		EndsAt:        hike.EndsAt,
+		PhotoFileID:   photoFileID,
 	})
 }
