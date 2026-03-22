@@ -15,15 +15,11 @@ func HikeMenu() tgbot.ReplyKeyboardMarkup {
 	)
 }
 
-func backBtn() tgbot.ReplyKeyboardMarkup {
-	return tgbot.NewReplyKeyboard(
-		tgbot.NewKeyboardButtonRow(
-			tgbot.NewKeyboardButton("⬅️ Назад"),
+func ConfirmKeyboard() tgbot.InlineKeyboardMarkup {
+	return tgbot.NewInlineKeyboardMarkup(
+		tgbot.NewInlineKeyboardRow(
+			tgbot.NewInlineKeyboardButtonData("✅ Подтвердить", "confirm"),
+			tgbot.NewInlineKeyboardButtonData("❌ Отмена", "cancel"),
 		),
 	)
-}
-
-func btn(text, data string) tgbot.InlineKeyboardButton {
-	b := tgbot.NewInlineKeyboardButtonData(text, data)
-	return b
 }

@@ -79,7 +79,12 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 			h.fsm.Data(m.From.ID)["description_ru"],
 			common.Format(start), common.Format(end),
 		)
-		_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, preview))
+
+		msg := tgbot.NewMessage(m.Chat.ID, preview)
+		msg.ReplyMarkup = hikeUI.ConfirmKeyboard()
+
+		_, err = h.bot.Send(msg)
+
 		return err
 
 	case fsm.StateConfirm:
@@ -158,13 +163,13 @@ func (h *HikeHandler) ListHikes(ctx context.Context, m *tgbot.Message) error {
 	b.WriteString("🏔 Список хайков\n\n")
 
 	for _, hike := range hikes {
-		status := "❌"
+		status := "📝"
 		if hike.IsPublished {
 			status = "✅"
 		}
 
 		line := fmt.Sprintf(
-			"#%d · %s · %s · %s\n",
+			"#%d · %s · %s · %s\n\n",
 			hike.ID,
 			hike.TitleRu,
 			hike.StartsAt.In(h.loc).Format("02.01.2006"),

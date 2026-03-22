@@ -73,7 +73,10 @@ func (r *router) showMainMenu(chatID int64) error {
 
 func (r *router) routeCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
 	switch q.Data {
-
+	case "confirm":
+		return r.hikeHandler.HandleConfirm(ctx, q)
+	case "cancel":
+		return r.hikeHandler.HandleCancel(ctx, q)
 	}
 
 	return nil
