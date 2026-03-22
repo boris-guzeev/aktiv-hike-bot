@@ -74,7 +74,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
 		preview := fmt.Sprintf(
-			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\n\nОтправьте 'ok' для сохранения или 'cancel' для отмены.",
+			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\n\nОтправьте 'ok' для сохранения или 'cancel' для отмены или нажмите нужную клавишу на клавиатуре.",
 			h.fsm.Data(m.From.ID)["title_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
 			common.Format(start), common.Format(end),
@@ -86,7 +86,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		txt := strings.TrimSpace(strings.ToLower(m.Text))
 		if txt == "cancel" {
 			h.fsm.Reset(m.From.ID)
-			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Создание отменено. Введите /newhike чтобы начать заново."))
+			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Создание отменено."))
 			return err
 		}
 		if txt != "ok" {
@@ -105,7 +105,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 
 	default:
 		h.fsm.Reset(m.From.ID)
-		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Сбросил состояние. Введите /newhike"))
+		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Сбросил состояние."))
 		return err
 	}
 }
