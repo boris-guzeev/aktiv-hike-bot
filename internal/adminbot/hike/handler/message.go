@@ -35,7 +35,7 @@ func (h *HikeHandler) ShowMenu(ctx context.Context, m *tgbot.Message) error {
 
 func (h *HikeHandler) StartCreateHike(ctx context.Context, m *tgbot.Message) error {
 	h.fsm.Reset(m.From.ID)
-	h.fsm.Set(m.From.ID, fsm.StateCreateDescRU)
+	h.fsm.Set(m.From.ID, fsm.StateCreateTitleRU)
 	_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите название RU:"))
 	return err
 }
