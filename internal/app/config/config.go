@@ -7,18 +7,42 @@ import (
 	"strconv"
 )
 
-type Config struct {
-	AdminBotToken string
-	AdminChatID   int64
-	DatabaseURL   string
+type Common struct {
+	AdminChatID int64
+	DatabaseURL string
+	StorageRoot string
+	Timezone    string
 }
 
-func MustLoad() Config {
+type AdminBot struct {
+	Common
+	AdminBotToken string
+}
+
+type ClientBot struct {
+	Common
+	ClientBotToken string
+}
+
+func MustLoadCommon() Common {
 	adminChat := mustParseInt64(getenv("ADMIN_CHAT_ID"))
-	return Config{
+	return Common{
+		AdminChatID: adminChat,
+		DatabaseURL: getenv("DB_DSN"),
+		StorageRoot: os.Getenv("STORAGE_ROOT"),
+		Timezone:    os.Getenv("TZ"),
+	}
+}
+
+func MustLoadAdminBot() AdminBot {
+	return AdminBot{
 		AdminBotToken: getenv("ADMIN_BOT_TOKEN"),
-		AdminChatID:   adminChat,
-		DatabaseURL:   getenv("DB_DSN"),
+	}
+}
+
+func MustLoadClientBot() ClientBot {
+	return ClientBot{
+		ClientBotToken: getenv("CLIENT_BOT_TOKEN"),
 	}
 }
 

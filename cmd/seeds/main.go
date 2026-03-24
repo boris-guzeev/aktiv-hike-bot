@@ -19,7 +19,7 @@ func main() {
 
 	// Init Context and Config
 	ctx := context.Background()
-	cfg := config.MustLoad()
+	cfg := config.MustLoadCommon()
 
 	// Init DB
 	conn, err := pgx.Connect(ctx, cfg.DatabaseURL)

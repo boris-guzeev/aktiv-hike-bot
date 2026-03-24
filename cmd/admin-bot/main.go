@@ -28,7 +28,7 @@ func main() {
 
 	// Init Context and Config
 	ctx := context.Background()
-	cfg := config.MustLoad()
+	cfg := config.MustLoadAdminBot()
 
 	// Init Location (Timezone)
 	loc, err := time.LoadLocation(os.Getenv("TZ"))

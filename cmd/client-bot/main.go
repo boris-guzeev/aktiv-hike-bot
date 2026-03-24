@@ -26,11 +26,8 @@ func main() {
 	// Init Context
 	ctx := context.Background()
 
-	// Init Location (Timezone)
-	// loc, err := time.LoadLocation(os.Getenv("TZ"))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// Get Config
+	cfg := config.MustLoadClientBot()
 
 	// Init TelegramBotAPI
 	botToken := os.Getenv("CLIENT_BOT_TOKEN")

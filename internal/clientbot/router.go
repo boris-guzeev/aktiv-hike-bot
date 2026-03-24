@@ -10,13 +10,13 @@ import (
 )
 
 type router struct {
-	log         *logrus.Logger
-	bot         *tgbot.BotAPI
-	adminChatID int64
-	handler     *handlers.Handler
+	log     *logrus.Logger
+	bot     *tgbot.BotAPI
+	cfg     config.ClientBot
+	handler *handlers.Handler
 }
 
-func NewRouter(l *logrus.Logger, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *router {
+func NewRouter(l *logrus.Logger, b *tgbot.BotAPI, q *sqlc.Queries, c config.ClientBot) *router {
 	return &router{
 		log:         l,
 		bot:         b,
