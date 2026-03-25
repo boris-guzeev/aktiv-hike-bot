@@ -3,6 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,10 +19,7 @@ import (
 )
 
 func (h *HikeHandler) InProgress(userID int64) bool {
-	if h.fsm.State(userID) != fsm.StateIdle {
-		return true
-	}
-	return false
+	return h.fsm.State(userID) != fsm.StateIdle
 }
 
 func (h *HikeHandler) ShowMenu(ctx context.Context, m *tgbot.Message) error {
@@ -55,7 +56,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 
 		// Пропускаем description_en
 		h.fsm.Set(m.From.ID, fsm.StateCreateDates)
-		examples := "Введите даты начала и завершения хайка (примеры: `10`, `10 12`, `10-12`, `31 3`, `03.02-04.02`, `15.12 16.12`)."
+		examples := "Введите даты начала и завершения хайка (примеры: 10, 10 12, 10-12, 31 3, 03.02-04.02, 15.12 16.12)."
 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, examples))
 		return err
 
@@ -150,11 +151,65 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 	}
 
 	// Create Hike
-	if err := h.service.CreateHike(ctx, hike); err != nil {
+	createdHikeID, err := h.service.CreateHike(ctx, hike)
+	if err != nil {
+		return err
+	}
+	imagePath, err := h.saveImage(ctx, data["photo_file_id"], createdHikeID)
+	if err != nil {
+		return err
+	}
+
+	// Save image path
+	if err := h.service.UpdateImagePath(ctx, createdHikeID, imagePath); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (h *HikeHandler) saveImage(ctx context.Context, fileID string, hikeID int32) (string, error) {
+	file, err := h.bot.GetFile(tgbot.FileConfig{FileID: fileID})
+	if err != nil {
+		return "", err
+	}
+
+	url := file.Link(h.bot.Token)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected http-status code: %d", resp.StatusCode)
+	}
+
+	dir := filepath.Join(h.storageRoot, "hikes")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(dir, fmt.Sprintf("%d.jpg", hikeID))
+
+	out, err := os.Create(path)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("hikes/%d.jpg", hikeID), nil
 }
 
 func (h *HikeHandler) ListHikes(ctx context.Context, m *tgbot.Message) error {

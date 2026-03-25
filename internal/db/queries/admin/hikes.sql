@@ -1,4 +1,4 @@
--- name: CreateHike :exec
+-- name: CreateHike :one
 INSERT INTO hikes (
     title_ru, 
     title_en, 
@@ -8,7 +8,8 @@ INSERT INTO hikes (
     ends_at, 
     photo_file_id, 
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+RETURNING id;
 
 -- name: UpdateHike :one
 UPDATE hikes SET
@@ -23,6 +24,9 @@ UPDATE hikes SET
     updated_at     = $10
 WHERE id = $1
 RETURNING *;
+
+-- name: UpdateImagePath :exec
+UPDATE hikes SET image_path = $2 WHERE id = $1;
 
 -- name: DeleteHike :exec
 DELETE FROM hikes WHERE id = $1;

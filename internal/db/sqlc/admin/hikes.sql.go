@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createHike = `-- name: CreateHike :exec
+const createHike = `-- name: CreateHike :one
 INSERT INTO hikes (
     title_ru, 
     title_en, 
@@ -23,6 +23,7 @@ INSERT INTO hikes (
     photo_file_id, 
     is_published
 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+RETURNING id
 `
 
 type CreateHikeParams struct {
@@ -36,8 +37,8 @@ type CreateHikeParams struct {
 	IsPublished   bool        `db:"is_published" json:"is_published"`
 }
 
-func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) error {
-	_, err := q.db.Exec(ctx, createHike,
+func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createHike,
 		arg.TitleRu,
 		arg.TitleEn,
 		arg.DescriptionRu,
@@ -47,7 +48,9 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) error {
 		arg.PhotoFileID,
 		arg.IsPublished,
 	)
-	return err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteHike = `-- name: DeleteHike :exec
@@ -60,7 +63,7 @@ func (q *Queries) DeleteHike(ctx context.Context, id int32) error {
 }
 
 const getHikeByID = `-- name: GetHikeByID :one
-SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at FROM hikes WHERE id = $1
+SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path FROM hikes WHERE id = $1
 `
 
 func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
@@ -78,6 +81,7 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
 		&i.IsPublished,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ImagePath,
 	)
 	return i, err
 }
@@ -221,7 +225,7 @@ UPDATE hikes SET
     is_published   = $9,
     updated_at     = $10
 WHERE id = $1
-RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at
+RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path
 `
 
 type UpdateHikeParams struct {
@@ -263,6 +267,21 @@ func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, e
 		&i.IsPublished,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ImagePath,
 	)
 	return i, err
+}
+
+const updateImagePath = `-- name: UpdateImagePath :exec
+UPDATE hikes SET image_path = $2 WHERE id = $1
+`
+
+type UpdateImagePathParams struct {
+	ID        int32       `db:"id" json:"id"`
+	ImagePath pgtype.Text `db:"image_path" json:"image_path"`
+}
+
+func (q *Queries) UpdateImagePath(ctx context.Context, arg UpdateImagePathParams) error {
+	_, err := q.db.Exec(ctx, updateImagePath, arg.ID, arg.ImagePath)
+	return err
 }

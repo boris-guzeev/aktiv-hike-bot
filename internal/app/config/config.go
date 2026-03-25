@@ -35,13 +35,17 @@ func MustLoadCommon() Common {
 }
 
 func MustLoadAdminBot() AdminBot {
+	common := MustLoadCommon()
 	return AdminBot{
+		Common:        common,
 		AdminBotToken: getenv("ADMIN_BOT_TOKEN"),
 	}
 }
 
 func MustLoadClientBot() ClientBot {
+	common := MustLoadCommon()
 	return ClientBot{
+		Common:         common,
 		ClientBotToken: getenv("CLIENT_BOT_TOKEN"),
 	}
 }

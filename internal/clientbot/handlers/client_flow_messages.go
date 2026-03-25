@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"path/filepath"
 	"strings"
+	"time"
 
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -61,51 +64,83 @@ func (h *Handler) showActual(ctx context.Context, chatID int64) error {
 		Offset: 0,
 	})
 	if err != nil {
-		return err
+		return logger.WrapError(err)
 	}
 
 	if len(rows) == 0 {
 		_, err = h.bot.Send(tgbot.NewMessage(chatID, "Пока нет актуальных хайков."))
-		return err
+		return logger.WrapError(err)
 	}
 
 	for _, r := range rows {
-		var b strings.Builder
-
-		b.WriteString("🏔 <b>")
-		b.WriteString(html.EscapeString(r.TitleRu))
-		b.WriteString("</b>\n")
-
-		b.WriteString("📅 ")
-		b.WriteString(r.StartsAt.Format("02 January 2006"))
-		b.WriteString("\n")
-
-		b.WriteString("📅 ")
-		b.WriteString(r.EndsAt.Format("02 January 2006"))
-		b.WriteString("\n")
-
-		if r.DescriptionRu != "" {
-			b.WriteString("\n")
-			b.WriteString(html.EscapeString(r.DescriptionRu))
-			b.WriteString("\n")
-		}
+		caption := buildHikeCaption(r)
 
 		kb := tgbot.NewInlineKeyboardMarkup(
 			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData("🥾 Забронировать", fmt.Sprintf("book_hike:%d", r.ID)),
+				tgbot.NewInlineKeyboardButtonData(
+					"🥾 Забронировать",
+					fmt.Sprintf("book_hike:%d", r.ID),
+				),
 			),
 		)
 
-		msg := tgbot.NewMessage(chatID, b.String())
-		msg.ParseMode = "HTML"
+		if r.ImagePath.Valid && r.ImagePath.String != "" {
+			imagePath := filepath.Join(h.cfg.StorageRoot, r.ImagePath.String)
+			msg := tgbot.NewPhoto(chatID, tgbot.FilePath(imagePath))
+			msg.Caption = caption
+			msg.ParseMode = tgbot.ModeHTML
+			msg.ReplyMarkup = kb
+
+			if _, err := h.bot.Send(msg); err != nil {
+				return logger.WrapError(err)
+			}
+
+			continue
+		}
+
+		msg := tgbot.NewMessage(chatID, caption)
+		msg.ParseMode = tgbot.ModeHTML
 		msg.ReplyMarkup = kb
 
 		if _, err := h.bot.Send(msg); err != nil {
-			return err
+			return logger.WrapError(err)
 		}
 	}
 
 	return nil
+}
+
+func buildHikeCaption(r sqlc.ListActualHikesRow) string {
+	var b strings.Builder
+
+	// Title
+	b.WriteString("🏔 <b>")
+	b.WriteString(html.EscapeString(r.TitleRu))
+	b.WriteString("</b>\n")
+
+	// StartsAt | EndsAt
+	b.WriteString("🗓 ")
+	b.WriteString(formatDateRange(r.StartsAt, r.EndsAt))
+	b.WriteString("\n")
+
+	// Description
+	if r.DescriptionRu != "" {
+		b.WriteString("\n")
+		b.WriteString(html.EscapeString(r.DescriptionRu))
+	}
+
+	return b.String()
+}
+
+func formatDateRange(start, end time.Time) string {
+	startDate := start.Format("02.01.2006")
+	endDate := end.Format("02.01.2006")
+
+	if startDate == endDate {
+		return startDate
+	}
+
+	return fmt.Sprintf("%s — %s", startDate, endDate)
 }
 
 func (h *Handler) showMyBookings(ctx context.Context, chatID int64) error {

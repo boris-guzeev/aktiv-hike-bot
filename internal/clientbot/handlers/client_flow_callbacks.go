@@ -98,7 +98,7 @@ func (h *Handler) onClientBookHike(ctx context.Context, q *tgbot.CallbackQuery) 
 	h.replyCallback(q, "Ваша заявка отправлена ✅ Мы передали её менеджерам.")
 
 	// 9) Form and send admin message
-	msg := tgbot.NewMessage(h.adminChatID, formatAdminBookingMessage(
+	msg := tgbot.NewMessage(h.cfg.AdminChatID, formatAdminBookingMessage(
 		hike,
 		bookingID,
 		tgUserID,
@@ -109,7 +109,7 @@ func (h *Handler) onClientBookHike(ctx context.Context, q *tgbot.CallbackQuery) 
 	msg.ReplyMarkup = adminBookingKeyboard(bookingID)
 
 	if _, err := h.bot.Send(msg); err != nil {
-		h.log.Errorf("failed to send admin message to chat=%v: %v", h.adminChatID, err)
+		h.log.Errorf("failed to send admin message to chat=%v: %v", h.cfg.AdminChatID, err)
 	}
 }
 

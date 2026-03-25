@@ -31,7 +31,7 @@ func main() {
 	cfg := config.MustLoadAdminBot()
 
 	// Init Location (Timezone)
-	loc, err := time.LoadLocation(os.Getenv("TZ"))
+	loc, err := time.LoadLocation(cfg.Timezone)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func main() {
 	// --- Hike --- /
 	hikeRep := hikeRepository.New(queries)
 	hikeSvc := hikeService.New(hikeRep)
-	hikeHnd := hikeHandler.New(bot, hikeSvc, loc)
+	hikeHnd := hikeHandler.New(bot, hikeSvc, cfg.StorageRoot, loc)
 
 	// Init router
 	r := adminbot.NewRouter(bot, cfg.AdminChatID, hikeHnd)

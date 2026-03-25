@@ -20,7 +20,8 @@ type Repository interface {
 	ListHikes(ctx context.Context, limit, offset int32) ([]Hike, error)
 	ListActualHikes(ctx context.Context, limit, offset int32) ([]Hike, error)
 	PublishHike(ctx context.Context, id int32) error
-	CreateHike(ctx context.Context, hike Hike) error
+	CreateHike(ctx context.Context, hike Hike) (int32, error)
+	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
 }
@@ -30,7 +31,8 @@ type Service interface {
 	ListHikes(ctx context.Context, page, size int32) ([]Hike, error)
 	ListActualHikes(ctx context.Context, page, size int32) ([]Hike, error)
 	PublishHike(ctx context.Context, id int32) error
-	CreateHike(ctx context.Context, hike Hike) error
+	CreateHike(ctx context.Context, hike Hike) (int32, error)
+	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
 }
@@ -61,8 +63,12 @@ func (s service) PublishHike(ctx context.Context, id int32) error {
 	return s.repo.PublishHike(ctx, id)
 }
 
-func (s service) CreateHike(ctx context.Context, hike Hike) error {
+func (s service) CreateHike(ctx context.Context, hike Hike) (int32, error) {
 	return s.repo.CreateHike(ctx, hike)
+}
+
+func (s service) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {
+	return s.repo.UpdateImagePath(ctx, hikeID, imagePath)
 }
 
 func (s service) HideHike(ctx context.Context, id int32) error {

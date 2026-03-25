@@ -68,7 +68,7 @@ func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
 }
 
 const listActualHikes = `-- name: ListActualHikes :many
-SELECT id, title_ru, description_ru, starts_at, ends_at
+SELECT id, title_ru, description_ru, starts_at, ends_at, image_path
 FROM hikes
 WHERE is_published = true AND ends_at >= now()
 ORDER BY starts_at ASC
@@ -81,11 +81,12 @@ type ListActualHikesParams struct {
 }
 
 type ListActualHikesRow struct {
-	ID            int32     `db:"id" json:"id"`
-	TitleRu       string    `db:"title_ru" json:"title_ru"`
-	DescriptionRu string    `db:"description_ru" json:"description_ru"`
-	StartsAt      time.Time `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time `db:"ends_at" json:"ends_at"`
+	ID            int32       `db:"id" json:"id"`
+	TitleRu       string      `db:"title_ru" json:"title_ru"`
+	DescriptionRu string      `db:"description_ru" json:"description_ru"`
+	StartsAt      time.Time   `db:"starts_at" json:"starts_at"`
+	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
+	ImagePath     pgtype.Text `db:"image_path" json:"image_path"`
 }
 
 func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams) ([]ListActualHikesRow, error) {
@@ -103,6 +104,7 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 			&i.DescriptionRu,
 			&i.StartsAt,
 			&i.EndsAt,
+			&i.ImagePath,
 		); err != nil {
 			return nil, err
 		}

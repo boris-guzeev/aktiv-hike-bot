@@ -97,7 +97,7 @@ func (r repository) DeleteHike(ctx context.Context, id int32) error {
 	return r.queries.DeleteHike(ctx, id)
 }
 
-func (r repository) CreateHike(ctx context.Context, hike service.Hike) error {
+func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, error) {
 	photoFileID := pgtype.Text{
 		String: hike.PhotoFileID,
 		Valid:  hike.PhotoFileID != "",
@@ -109,5 +109,17 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) error {
 		StartsAt:      hike.StartsAt,
 		EndsAt:        hike.EndsAt,
 		PhotoFileID:   photoFileID,
+	})
+}
+
+func (r repository) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {
+	imagePathText := pgtype.Text{
+		String: imagePath,
+		Valid:  imagePath != "",
+	}
+
+	return r.queries.UpdateImagePath(ctx, admin.UpdateImagePathParams{
+		ID:        hikeID,
+		ImagePath: imagePathText,
 	})
 }

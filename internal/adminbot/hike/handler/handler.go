@@ -9,17 +9,19 @@ import (
 )
 
 type HikeHandler struct {
-	bot     *tgbot.BotAPI
-	fsm     *fsm.FSM
-	service service.Service
-	loc     *time.Location
+	bot         *tgbot.BotAPI
+	fsm         *fsm.FSM
+	service     service.Service
+	storageRoot string
+	loc         *time.Location
 }
 
-func New(b *tgbot.BotAPI, s service.Service, l *time.Location) *HikeHandler {
+func New(b *tgbot.BotAPI, s service.Service, sroot string, l *time.Location) *HikeHandler {
 	return &HikeHandler{
-		bot:     b,
-		fsm:     fsm.NewFSM(),
-		service: s,
-		loc:     l,
+		bot:         b,
+		fsm:         fsm.NewFSM(),
+		service:     s,
+		storageRoot: sroot,
+		loc:         l,
 	}
 }

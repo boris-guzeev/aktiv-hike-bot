@@ -2,26 +2,18 @@ package main
 
 import (
 	"context"
-	"os"
-	"strconv"
 
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	// TODO: init Logger
-	log := logrus.New()
-	// TODO: init Config
-	// TODO: собрать все переменные в конфиг
-	adminChatIdStr := os.Getenv("ADMIN_CHAT_ID")
-	adminChatId, err := strconv.ParseInt(adminChatIdStr, 10, 64)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log := logger.InitLogger()
 
 	// Init Context
 	ctx := context.Background()
@@ -30,16 +22,14 @@ func main() {
 	cfg := config.MustLoadClientBot()
 
 	// Init TelegramBotAPI
-	botToken := os.Getenv("CLIENT_BOT_TOKEN")
-	clientBot, err := tgbot.NewBotAPI(botToken)
+	clientBot, err := tgbot.NewBotAPI(cfg.ClientBotToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 	clientBot.Debug = false
 
 	// Init DB
-	dbDsn := os.Getenv("DB_DSN")
-	conn, err := pgx.Connect(ctx, dbDsn)
+	conn, err := pgx.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +39,7 @@ func main() {
 	queries := sqlc.New(conn)
 
 	// Init router
-	r := clientbot.NewRouter(log, clientBot, queries, adminChatId)
+	r := clientbot.NewRouter(log, clientBot, queries, cfg)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30
@@ -57,7 +47,7 @@ func main() {
 	updates := clientBot.GetUpdatesChan(u)
 	for upd := range updates {
 		if err := r.Route(ctx, upd); err != nil {
-			log.Printf("route error: %v", err)
+			log.StructuredError("bot error", err)
 		}
 	}
 }

@@ -20,35 +20,6 @@ services:
     ports:
       - 127.0.0.1:15432:5432
 
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: aktivhike_redis
-  #   restart: unless-stopped
-  #   command: ["redis-server", "--appendonly", "yes"]
-  #   volumes:
-  #     - redis_data:/data
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 5s
-  #     timeout: 2s
-  #     retries: 10
-  #   networks:
-  #     - app_net
-  #   ports:
-  #     - 127.0.0.1:16379:6379
-
-  # redis-commander:
-  #   image: rediscommander/redis-commander:latest
-  #   container_name: redis_commander
-  #   environment:
-  #     - REDIS_HOSTS=local:redis:6379
-  #   ports:
-  #     - "8081:8081"
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - app_net
-
   migrate:
     image: migrate/migrate:4
     depends_on:
@@ -79,14 +50,14 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-      # redis:
-      #   condition: service_healthy
     environment:
       ADMIN_BOT_TOKEN: ${ADMIN_BOT_TOKEN}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
       DB_DSN: ${DB_DSN}
+      STORAGE_ROOT: ${STORAGE_ROOT}
       TZ: ${TZ}
-      # REDIS_ADDR: redis:6379
+    volumes:
+      - hike_storage:${STORAGE_ROOT}
     restart: unless-stopped
     networks:
       - app_net
@@ -107,14 +78,17 @@ services:
       CLIENT_BOT_TOKEN: ${CLIENT_BOT_TOKEN}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
       DB_DSN: ${DB_DSN}
+      STORAGE_ROOT: ${STORAGE_ROOT}
       TZ: ${TZ}
+    volumes:
+      - hike_storage:${STORAGE_ROOT}
     restart: unless-stopped
     networks:
       - app_net
 
 volumes:
   db_data:
-  redis_data:
+  hike_storage:
 
 networks:
   app_net:

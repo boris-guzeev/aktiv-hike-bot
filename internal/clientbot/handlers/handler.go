@@ -3,25 +3,26 @@ package handlers
 import (
 	"strings"
 
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/sirupsen/logrus"
 )
 
 type Handler struct {
-	log         *logrus.Logger
-	bot         *tgbot.BotAPI
-	queries     *sqlc.Queries
-	adminChatID int64
+	log     logger.Logger
+	bot     *tgbot.BotAPI
+	queries *sqlc.Queries
+	cfg     config.ClientBot
 }
 
-func New(l *logrus.Logger, b *tgbot.BotAPI, q *sqlc.Queries, acID int64) *Handler {
+func New(l logger.Logger, q *sqlc.Queries, b *tgbot.BotAPI, c config.ClientBot) *Handler {
 	return &Handler{
-		log:         l,
-		bot:         b,
-		queries:     q,
-		adminChatID: acID,
+		log:     l,
+		bot:     b,
+		queries: q,
+		cfg:     c,
 	}
 }
 

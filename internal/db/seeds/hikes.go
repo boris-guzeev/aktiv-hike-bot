@@ -184,7 +184,7 @@ func (s *Seeder) Seed(ctx context.Context) error {
 	}
 
 	for _, h := range hikes {
-		err := s.q.CreateHike(ctx, h)
+		_, err := s.q.CreateHike(ctx, h)
 		if err != nil {
 			return fmt.Errorf("failed to seed hike %s: %w", h.TitleRu, err)
 		}

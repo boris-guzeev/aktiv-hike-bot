@@ -39,6 +39,7 @@ type Hike struct {
 	IsPublished   bool        `db:"is_published" json:"is_published"`
 	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time   `db:"updated_at" json:"updated_at"`
+	ImagePath     pgtype.Text `db:"image_path" json:"image_path"`
 }
 
 type Payment struct {
