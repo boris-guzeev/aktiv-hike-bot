@@ -1,4 +1,4 @@
-package handlers
+package booking
 
 import (
 	"fmt"
@@ -6,33 +6,10 @@ import (
 	"strings"
 	"time"
 
-	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
-	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
 )
 
-type BookingStatus string
-
-const (
-	StatusNew        BookingStatus = "new"
-	StatusInProgress BookingStatus = "in_progress"
-	StatusConfirmed  BookingStatus = "confirmed"
-	StatusCompleted  BookingStatus = "completed"
-	StatusCanceled   BookingStatus = "canceled"
-)
-
-var bookingStatuses = map[BookingStatus]string{
-	StatusNew:        "новая",
-	StatusInProgress: "в работе",
-	StatusConfirmed:  "подтверждена",
-	StatusCompleted:  "завершена",
-	StatusCanceled:   "отменена",
-}
-
-func (b BookingStatus) String() string {
-	return bookingStatuses[b]
-}
-
-func formatAdminBookingMessage(hike sqlc.GetHikeRow, bookingID int32, tgUserID int64, username, fullName string) string {
+func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64, username, fullName string) string {
 	title := html.EscapeString(hike.TitleRu)
 	fullNameEsc := html.EscapeString(strings.TrimSpace(fullName))
 
@@ -73,15 +50,28 @@ func formatAdminBookingMessage(hike sqlc.GetHikeRow, bookingID int32, tgUserID i
 	)
 }
 
-func adminBookingKeyboard(bookingID int32) tgbot.InlineKeyboardMarkup {
-	return tgbot.NewInlineKeyboardMarkup(
-		tgbot.NewInlineKeyboardRow(
-			tgbot.NewInlineKeyboardButtonData(
-				"🟢 Взять в работу",
-				fmt.Sprintf("booking_take:%d", bookingID),
-			),
-		),
+func BookingTakenMessage(text, fullName, username string) string {
+	managerName := strings.TrimSpace(fullName)
+	if managerName == "" {
+		managerName = "Менеджер"
+	}
+
+	managerLine := managerName
+	username = strings.TrimSpace(username)
+	if username != "" {
+		managerLine = fmt.Sprintf("%s (@%s)", managerName, username)
+	}
+
+	statusLine := fmt.Sprintf(
+		"\n\n🟡 <b>Взято в работу менеджером</b>\n%s",
+		html.EscapeString(managerLine),
 	)
+
+	if strings.Contains(text, "🟡 <b>Взято в работу менеджером</b>") {
+		return text
+	}
+
+	return text + statusLine
 }
 
 func sameDate(a, b time.Time) bool {

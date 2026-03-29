@@ -8,11 +8,25 @@ import (
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/handler"
+	hikeRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/repository"
+	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
+
+	userRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/user/repository"
+	userService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/user/service"
+
+	adminRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/admin/repository"
+	adminService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/admin/service"
+
+	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/booking/handler"
+	bookingRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/booking/repository"
+	bookingService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/booking/service"
 )
 
 func main() {
-	// TODO: init Logger
+	// Init Logger
 	log := logger.InitLogger()
 
 	// Init Context
@@ -22,29 +36,50 @@ func main() {
 	cfg := config.MustLoadClientBot()
 
 	// Init TelegramBotAPI
-	clientBot, err := tgbot.NewBotAPI(cfg.ClientBotToken)
+	bot, err := tgbot.NewBotAPI(cfg.ClientBotToken)
 	if err != nil {
 		log.Fatal(err)
 	}
-	clientBot.Debug = false
+	bot.Debug = false
 
 	// Init DB
-	conn, err := pgx.Connect(ctx, cfg.DatabaseURL)
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close(ctx)
+	defer pool.Close()
 
 	// Init SQLC
-	queries := sqlc.New(conn)
+	queries := sqlc.New(pool)
 
-	// Init router
-	r := clientbot.NewRouter(log, clientBot, queries, cfg)
+	// Init Application Dependencies
+	// --- Hike --- /
+	hikeRep := hikeRepository.New(queries)
+	hikeSrv := hikeService.New(hikeRep)
+	hikeHnd := hikeHandler.New(bot, cfg, hikeSrv)
 
+	// --- User --- /
+	userRepo := userRepository.New(queries)
+	userSrv := userService.New(userRepo)
+
+	// --- Admin --- /
+	adminRepo := adminRepository.New(queries)
+	adminSrv := adminService.New(adminRepo)
+
+	// --- Booking --- /
+	bookRepo := bookingRepository.New(queries)
+	bookSrv := bookingService.New(bookRepo)
+	bookHnd := bookingHandler.New(bot, cfg, userSrv, adminSrv, hikeSrv, bookSrv)
+
+	// Init Router
+	r := clientbot.NewRouter(bot, cfg, hikeHnd, bookHnd)
+
+	// Bot updates
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30
+	updates := bot.GetUpdatesChan(u)
+	defer bot.StopReceivingUpdates()
 
-	updates := clientBot.GetUpdatesChan(u)
 	for upd := range updates {
 		if err := r.Route(ctx, upd); err != nil {
 			log.StructuredError("bot error", err)

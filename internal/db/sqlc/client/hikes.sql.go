@@ -23,20 +23,21 @@ func (q *Queries) CreateAdminIfNotExists(ctx context.Context, id int32) error {
 	return err
 }
 
-const createBookingNew = `-- name: CreateBookingNew :one
+const createBooking = `-- name: CreateBooking :one
 INSERT INTO bookings (hike_id, user_id, status)
-VALUES ($1, $2, 'new')
+VALUES ($1, $2, $3)
 ON CONFLICT (hike_id, user_id) DO NOTHING
 RETURNING id
 `
 
-type CreateBookingNewParams struct {
-	HikeID int32 `db:"hike_id" json:"hike_id"`
-	UserID int32 `db:"user_id" json:"user_id"`
+type CreateBookingParams struct {
+	HikeID int32  `db:"hike_id" json:"hike_id"`
+	UserID int32  `db:"user_id" json:"user_id"`
+	Status string `db:"status" json:"status"`
 }
 
-func (q *Queries) CreateBookingNew(ctx context.Context, arg CreateBookingNewParams) (int32, error) {
-	row := q.db.QueryRow(ctx, createBookingNew, arg.HikeID, arg.UserID)
+func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createBooking, arg.HikeID, arg.UserID, arg.Status)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
@@ -119,19 +120,48 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 const takeBookingInProgress = `-- name: TakeBookingInProgress :one
 UPDATE bookings
 SET
-    status = 'in_progress',
-    taken_by_admin_id = $2
-WHERE id = $1 AND status = 'new'
+    status = $2,
+    taken_by_admin_id = $3,
+    taken_at = now()
+WHERE id = $1 AND status = $4
 RETURNING id
 `
 
 type TakeBookingInProgressParams struct {
 	ID             int32       `db:"id" json:"id"`
+	Status         string      `db:"status" json:"status"`
 	TakenByAdminID pgtype.Int4 `db:"taken_by_admin_id" json:"taken_by_admin_id"`
+	ExpectedStatus string      `db:"expected_status" json:"expected_status"`
 }
 
 func (q *Queries) TakeBookingInProgress(ctx context.Context, arg TakeBookingInProgressParams) (int32, error) {
-	row := q.db.QueryRow(ctx, takeBookingInProgress, arg.ID, arg.TakenByAdminID)
+	row := q.db.QueryRow(ctx, takeBookingInProgress,
+		arg.ID,
+		arg.Status,
+		arg.TakenByAdminID,
+		arg.ExpectedStatus,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const updateBookingStatus = `-- name: UpdateBookingStatus :one
+UPDATE bookings
+SET
+    status = $2
+WHERE id = $1 AND status = $3
+RETURNING id
+`
+
+type UpdateBookingStatusParams struct {
+	ID       int32  `db:"id" json:"id"`
+	Status   string `db:"status" json:"status"`
+	Status_2 string `db:"status_2" json:"status_2"`
+}
+
+func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateBookingStatus, arg.ID, arg.Status, arg.Status_2)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
