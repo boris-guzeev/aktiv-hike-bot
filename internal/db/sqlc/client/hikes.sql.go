@@ -43,6 +43,34 @@ func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (i
 	return id, err
 }
 
+const getBookingByID = `-- name: GetBookingByID :one
+SELECT id, hike_id, user_id, status, taken_by_admin_id, taken_at
+FROM bookings WHERE id = $1
+`
+
+type GetBookingByIDRow struct {
+	ID             int32              `db:"id" json:"id"`
+	HikeID         int32              `db:"hike_id" json:"hike_id"`
+	UserID         int32              `db:"user_id" json:"user_id"`
+	Status         string             `db:"status" json:"status"`
+	TakenByAdminID pgtype.Int4        `db:"taken_by_admin_id" json:"taken_by_admin_id"`
+	TakenAt        pgtype.Timestamptz `db:"taken_at" json:"taken_at"`
+}
+
+func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDRow, error) {
+	row := q.db.QueryRow(ctx, getBookingByID, id)
+	var i GetBookingByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.HikeID,
+		&i.UserID,
+		&i.Status,
+		&i.TakenByAdminID,
+		&i.TakenAt,
+	)
+	return i, err
+}
+
 const getHike = `-- name: GetHike :one
 SELECT id, title_ru, starts_at, ends_at
 FROM hikes
@@ -64,6 +92,31 @@ func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
 		&i.TitleRu,
 		&i.StartsAt,
 		&i.EndsAt,
+	)
+	return i, err
+}
+
+const getTelegramUserByID = `-- name: GetTelegramUserByID :one
+SELECT id, tg_user_id, tg_username, full_name
+FROM telegram_users
+WHERE id = $1
+`
+
+type GetTelegramUserByIDRow struct {
+	ID         int32       `db:"id" json:"id"`
+	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
+	FullName   pgtype.Text `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) GetTelegramUserByID(ctx context.Context, id int32) (GetTelegramUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getTelegramUserByID, id)
+	var i GetTelegramUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.TgUserID,
+		&i.TgUsername,
+		&i.FullName,
 	)
 	return i, err
 }

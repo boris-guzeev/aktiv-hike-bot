@@ -43,11 +43,13 @@ type Booking struct {
 }
 
 type Repository interface {
+	GetByID(ctx context.Context, id int32) (Booking, error)
 	Create(ctx context.Context, booking Booking) (int32, error)
 	TakeInProgress(ctx context.Context, bookingID, adminID int32) (int32, error)
 }
 
 type Service interface {
+	GetByID(ctx context.Context, id int32) (Booking, error)
 	Create(ctx context.Context, hikeID, userID int32) (int32, error)
 	TakeInProgress(ctx context.Context, bookingID, adminID int32) (int32, error)
 }
@@ -58,6 +60,10 @@ type service struct {
 
 func New(r Repository) Service {
 	return &service{repo: r}
+}
+
+func (s *service) GetByID(ctx context.Context, id int32) (Booking, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
 func (s *service) Create(ctx context.Context, hikeID, userID int32) (int32, error) {

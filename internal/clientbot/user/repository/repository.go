@@ -18,6 +18,20 @@ func New(q *sqlc.Queries) service.Repository {
 	return &repository{queries: q}
 }
 
+func (r *repository) GetByID(ctx context.Context, id int32) (service.TelegramUser, error) {
+	rawUser, err := r.queries.GetTelegramUserByID(ctx, id)
+	if err != nil {
+		return service.TelegramUser{}, logger.WrapError(err)
+	}
+
+	return service.TelegramUser{
+		ID:         rawUser.ID,
+		TgUserID:   rawUser.TgUserID,
+		TgUsername: rawUser.TgUsername.String,
+		FullName:   rawUser.FullName.String,
+	}, nil
+}
+
 func (r *repository) UpsertTelegramUser(ctx context.Context, tgUser service.TelegramUser) (int32, error) {
 	id, err := r.queries.UpsertTelegramUser(ctx, sqlc.UpsertTelegramUserParams{
 		TgUserID:   tgUser.TgUserID,

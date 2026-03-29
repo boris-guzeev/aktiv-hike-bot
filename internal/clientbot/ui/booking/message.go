@@ -9,6 +9,13 @@ import (
 	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
 )
 
+func ClientBookingMessage() string {
+	// TODO: В дальнейшем нужно подумаьть о сообщении по имени и с учетом выбранного языка
+	return "🤝 Вашей заявкой уже занимается менеджер AktivHike!\n\n" +
+		"С вами скоро свяжутся для уточнения деталей.\n" +
+		"Пожалуйста, ожидайте 😊"
+}
+
 func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64, username, fullName string) string {
 	title := html.EscapeString(hike.TitleRu)
 	fullNameEsc := html.EscapeString(strings.TrimSpace(fullName))

@@ -160,7 +160,33 @@ func (h *Handler) TakeBooking(ctx context.Context, q *tgbot.CallbackQuery) error
 		return fmt.Errorf("failed to update admin booking message: %w", err)
 	}
 
+	// Notify client
+	err = h.notifyClientBookingTaken(ctx, bookingID)
+	if err != nil {
+		return fmt.Errorf("failed to notify client about taken booking: %w", err)
+	}
+
 	return nil
+}
+
+func (h *Handler) notifyClientBookingTaken(ctx context.Context, bookingID int32) error {
+	booking, err := h.bookingService.GetByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+
+	user, err := h.userService.GetByID(ctx, booking.UserID)
+	if err != nil {
+		return err
+	}
+
+	msg := tgbot.NewMessage(
+		user.TgUserID,
+		bookingUI.ClientBookingMessage(),
+	)
+
+	_, err = h.bot.Send(msg)
+	return err
 }
 
 func (h *Handler) updateBookingTakenMessage(q *tgbot.CallbackQuery, fullName, username string) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
@@ -19,6 +20,32 @@ type repository struct {
 
 func New(q *client.Queries) service.Repository {
 	return &repository{queries: q}
+}
+
+func (r *repository) GetByID(ctx context.Context, id int32) (service.Booking, error) {
+	rawBooking, err := r.queries.GetBookingByID(ctx, id)
+	if err != nil {
+		return service.Booking{}, logger.WrapError(err)
+	}
+
+	var takenByAdminID *int32
+	if rawBooking.TakenByAdminID.Valid {
+		takenByAdminID = &rawBooking.TakenByAdminID.Int32
+	}
+
+	var takenAt *time.Time
+	if rawBooking.TakenAt.Valid {
+		takenAt = &rawBooking.TakenAt.Time
+	}
+
+	return service.Booking{
+		ID:             rawBooking.ID,
+		HikeID:         rawBooking.HikeID,
+		UserID:         rawBooking.UserID,
+		Status:         service.BookingStatus(rawBooking.Status),
+		TakenByAdminID: takenByAdminID,
+		TakenAt:        takenAt,
+	}, nil
 }
 
 func (r *repository) Create(ctx context.Context, booking service.Booking) (int32, error) {
