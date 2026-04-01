@@ -13,6 +13,7 @@ import (
 )
 
 const createHike = `-- name: CreateHike :one
+
 INSERT INTO hikes (
     title_ru, 
     title_en, 
@@ -37,6 +38,9 @@ type CreateHikeParams struct {
 	IsPublished   bool        `db:"is_published" json:"is_published"`
 }
 
+// =========================================
+// HIKES
+// =========================================
 func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createHike,
 		arg.TitleRu,
@@ -60,6 +64,36 @@ DELETE FROM hikes WHERE id = $1
 func (q *Queries) DeleteHike(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, deleteHike, id)
 	return err
+}
+
+const getBookingByID = `-- name: GetBookingByID :one
+
+SELECT id, hike_id, user_id, status, taken_by_admin_id
+FROM bookings WHERE id = $1
+`
+
+type GetBookingByIDRow struct {
+	ID             int32       `db:"id" json:"id"`
+	HikeID         int32       `db:"hike_id" json:"hike_id"`
+	UserID         int32       `db:"user_id" json:"user_id"`
+	Status         string      `db:"status" json:"status"`
+	TakenByAdminID pgtype.Int4 `db:"taken_by_admin_id" json:"taken_by_admin_id"`
+}
+
+// =========================================
+// BOOKINGS
+// =========================================
+func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDRow, error) {
+	row := q.db.QueryRow(ctx, getBookingByID, id)
+	var i GetBookingByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.HikeID,
+		&i.UserID,
+		&i.Status,
+		&i.TakenByAdminID,
+	)
+	return i, err
 }
 
 const getHikeByID = `-- name: GetHikeByID :one
@@ -122,6 +156,69 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.IsPublished,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminBookings = `-- name: ListAdminBookings :many
+SELECT
+    b.id,
+    b.hike_id,
+    h.title_ru AS hike_title,
+    b.user_id,
+    COALESCE(u.full_name, '') AS user_name,
+    u.tg_user_id AS user_tg_id,
+    b.status,
+    b.taken_at,
+    b.created_at
+FROM bookings b
+JOIN hikes h ON h.id = b.hike_id
+JOIN telegram_users u ON u.id = b.user_id
+WHERE
+    b.taken_by_admin_id = $1
+    AND b.status IN ('in_progress', 'confirmed')
+ORDER BY
+    b.created_at DESC
+`
+
+type ListAdminBookingsRow struct {
+	ID        int32              `db:"id" json:"id"`
+	HikeID    int32              `db:"hike_id" json:"hike_id"`
+	HikeTitle string             `db:"hike_title" json:"hike_title"`
+	UserID    int32              `db:"user_id" json:"user_id"`
+	UserName  string             `db:"user_name" json:"user_name"`
+	UserTgID  int64              `db:"user_tg_id" json:"user_tg_id"`
+	Status    string             `db:"status" json:"status"`
+	TakenAt   pgtype.Timestamptz `db:"taken_at" json:"taken_at"`
+	CreatedAt time.Time          `db:"created_at" json:"created_at"`
+}
+
+func (q *Queries) ListAdminBookings(ctx context.Context, takenByAdminID pgtype.Int4) ([]ListAdminBookingsRow, error) {
+	rows, err := q.db.Query(ctx, listAdminBookings, takenByAdminID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAdminBookingsRow
+	for rows.Next() {
+		var i ListAdminBookingsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.HikeID,
+			&i.HikeTitle,
+			&i.UserID,
+			&i.UserName,
+			&i.UserTgID,
+			&i.Status,
+			&i.TakenAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -213,6 +310,35 @@ func (q *Queries) SetPublished(ctx context.Context, arg SetPublishedParams) erro
 	return err
 }
 
+const updateBookingStatus = `-- name: UpdateBookingStatus :one
+UPDATE bookings
+SET status = $2
+WHERE id = $1
+RETURNING id, hike_id, user_id, status, note, created_at, taken_by_admin_id, taken_at, updated_at
+`
+
+type UpdateBookingStatusParams struct {
+	ID        int32  `db:"id" json:"id"`
+	NewStatus string `db:"new_status" json:"new_status"`
+}
+
+func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) (Booking, error) {
+	row := q.db.QueryRow(ctx, updateBookingStatus, arg.ID, arg.NewStatus)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.HikeID,
+		&i.UserID,
+		&i.Status,
+		&i.Note,
+		&i.CreatedAt,
+		&i.TakenByAdminID,
+		&i.TakenAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateHike = `-- name: UpdateHike :one
 UPDATE hikes SET
     title_ru       = $2,
@@ -284,4 +410,38 @@ type UpdateImagePathParams struct {
 func (q *Queries) UpdateImagePath(ctx context.Context, arg UpdateImagePathParams) error {
 	_, err := q.db.Exec(ctx, updateImagePath, arg.ID, arg.ImagePath)
 	return err
+}
+
+const upsertTelegramUser = `-- name: UpsertTelegramUser :one
+
+INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (tg_user_id)
+DO UPDATE SET
+    tg_username = EXCLUDED.tg_username,
+    full_name   = EXCLUDED.full_name,
+    lang        = EXCLUDED.lang
+RETURNING id
+`
+
+type UpsertTelegramUserParams struct {
+	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
+	FullName   pgtype.Text `db:"full_name" json:"full_name"`
+	Lang       string      `db:"lang" json:"lang"`
+}
+
+// =========================================
+// TELEGRAM USERS
+// =========================================
+func (q *Queries) UpsertTelegramUser(ctx context.Context, arg UpsertTelegramUserParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertTelegramUser,
+		arg.TgUserID,
+		arg.TgUsername,
+		arg.FullName,
+		arg.Lang,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

@@ -22,6 +22,7 @@ type AdminBot struct {
 type ClientBot struct {
 	Common
 	ClientBotToken string
+	AdminBotName   string
 }
 
 func MustLoadCommon() Common {
@@ -47,6 +48,7 @@ func MustLoadClientBot() ClientBot {
 	return ClientBot{
 		Common:         common,
 		ClientBotToken: getenv("CLIENT_BOT_TOKEN"),
+		AdminBotName:   getenv("ADMIN_BOT_NAME"),
 	}
 }
 

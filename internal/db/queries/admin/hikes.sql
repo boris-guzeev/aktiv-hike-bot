@@ -1,3 +1,7 @@
+-- =========================================
+-- HIKES
+-- =========================================
+
 -- name: CreateHike :one
 INSERT INTO hikes (
     title_ru, 
@@ -61,3 +65,51 @@ LIMIT $1 OFFSET $2;
 UPDATE hikes
 SET is_published = $1, updated_at = now()
 WHERE id = $2;
+
+-- =========================================
+-- TELEGRAM USERS
+-- =========================================
+
+-- name: UpsertTelegramUser :one
+INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (tg_user_id)
+DO UPDATE SET
+    tg_username = EXCLUDED.tg_username,
+    full_name   = EXCLUDED.full_name,
+    lang        = EXCLUDED.lang
+RETURNING id;
+
+-- =========================================
+-- BOOKINGS
+-- =========================================
+
+-- name: GetBookingByID :one
+SELECT id, hike_id, user_id, status, taken_by_admin_id
+FROM bookings WHERE id = $1;
+
+-- name: UpdateBookingStatus :one
+UPDATE bookings
+SET status = sqlc.arg(new_status)
+WHERE id = $1
+RETURNING *;
+
+-- name: ListAdminBookings :many
+SELECT
+    b.id,
+    b.hike_id,
+    h.title_ru AS hike_title,
+    b.user_id,
+    COALESCE(u.full_name, '') AS user_name,
+    u.tg_user_id AS user_tg_id,
+    b.status,
+    b.taken_at,
+    b.created_at
+FROM bookings b
+JOIN hikes h ON h.id = b.hike_id
+JOIN telegram_users u ON u.id = b.user_id
+WHERE
+    b.taken_by_admin_id = $1
+    AND b.status IN ('in_progress', 'confirmed')
+ORDER BY
+    b.created_at DESC;

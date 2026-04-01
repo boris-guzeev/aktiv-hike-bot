@@ -95,6 +95,7 @@ func (h *Handler) BookHike(ctx context.Context, q *tgbot.CallbackQuery) error {
 		tgUserID,
 		username,
 		fullName,
+		h.cfg.AdminBotName,
 	))
 	msg.ParseMode = "HTML"
 	msg.ReplyMarkup = bookingUI.AdminBookingKeyboard(bookingID)

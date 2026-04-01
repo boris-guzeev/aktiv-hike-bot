@@ -16,7 +16,7 @@ func ClientBookingMessage() string {
 		"Пожалуйста, ожидайте 😊"
 }
 
-func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64, username, fullName string) string {
+func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64, username, fullName, adminBot string) string {
 	title := html.EscapeString(hike.TitleRu)
 	fullNameEsc := html.EscapeString(strings.TrimSpace(fullName))
 
@@ -41,17 +41,20 @@ func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64,
 
 	userLink := fmt.Sprintf(`<a href="tg://user?id=%d">%s</a>`, tgUserID, fullNameEsc)
 
+	// TODO: вынести в переменную среды
 	return fmt.Sprintf(
 		"🆕 <b>Новая заявка на хайк</b>\n\n"+
 			"📦 ID заявки: %d\n"+
 			"📍 Хайк: %s\n"+
-			"🗓 Дата: %s\n\n"+
+			"🗓 Дата: %s\n"+
+			"Админ-бот: %s\n\n"+
 			"Данные клиента\n"+
 			"🔗 Username: %s\n"+
 			"👤 Пользователь: %s\n",
 		bookingID,
 		title,
 		dateRange,
+		adminBot,
 		userLink,
 		unameLine,
 	)

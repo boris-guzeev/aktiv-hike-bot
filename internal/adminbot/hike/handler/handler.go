@@ -3,9 +3,10 @@ package handler
 import (
 	"time"
 
+	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
-	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type HikeHandler struct {

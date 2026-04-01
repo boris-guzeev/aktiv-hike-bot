@@ -6,17 +6,6 @@ import (
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func AdminBookingKeyboard(bookingID int32) tgbot.InlineKeyboardMarkup {
-	return tgbot.NewInlineKeyboardMarkup(
-		tgbot.NewInlineKeyboardRow(
-			tgbot.NewInlineKeyboardButtonData(
-				"🟢 Взять в работу",
-				fmt.Sprintf("booking_take:%d", bookingID),
-			),
-		),
-	)
-}
-
 func BookingMenuKeyboard() tgbot.ReplyKeyboardMarkup {
 	return tgbot.NewReplyKeyboard(
 		tgbot.NewKeyboardButtonRow(
@@ -29,4 +18,12 @@ func BookingMenuKeyboard() tgbot.ReplyKeyboardMarkup {
 			tgbot.NewKeyboardButton("⬅️ Назад"),
 		),
 	)
+}
+
+func makeBookingApplyData(action string, bookingID int32) string {
+	return fmt.Sprintf("booking:apply:%s:%d", action, bookingID)
+}
+
+func makeBookingBackData(bookingID int32) string {
+	return fmt.Sprintf("booking:back:%d", bookingID)
 }

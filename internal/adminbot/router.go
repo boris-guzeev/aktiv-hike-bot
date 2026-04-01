@@ -2,23 +2,27 @@ package adminbot
 
 import (
 	"context"
+	"strings"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
+	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/booking/handler"
+	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type router struct {
-	bot         *tgbot.BotAPI
-	adminChatID int64
-	hikeHandler *handler.HikeHandler
+	bot            *tgbot.BotAPI
+	adminChatID    int64
+	hikeHandler    *hikeHandler.HikeHandler
+	bookingHandler *bookingHandler.BookingHandler
 }
 
-func NewRouter(b *tgbot.BotAPI, acID int64, h *handler.HikeHandler) *router {
+func NewRouter(b *tgbot.BotAPI, acID int64, hH *hikeHandler.HikeHandler, bH *bookingHandler.BookingHandler) *router {
 	return &router{
-		bot:         b,
-		adminChatID: acID,
-		hikeHandler: h,
+		bot:            b,
+		adminChatID:    acID,
+		hikeHandler:    hH,
+		bookingHandler: bH,
 	}
 }
 
@@ -31,8 +35,9 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 	}
 
 	// Private callbacks
-	if q := u.CallbackQuery; q != nil && q.Message.Chat.IsPrivate() {
+	if q := u.CallbackQuery; q != nil && q.Message != nil && q.Message.Chat.IsPrivate() {
 		if r.isAdmin(q.From.ID) {
+			// TODO: возможно уже тут разделять роутинг по назначению hike_ или booking_
 			return r.routeCallback(ctx, q)
 		}
 	}
@@ -46,18 +51,45 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 	}
 
 	switch m.Text {
+	case "🏔 Хайки", "➕ Создать хайк", "📋 Список хайков":
+		return r.routeHikeMessage(ctx, m)
+
+	case "📥 Заявки", "📋 Список заявок", "📊 Статистика заявок":
+		return r.routeBookingMessage(ctx, m)
+
+	case "⬅️ Назад":
+		return r.showMainMenu(m.Chat.ID)
+
+	case "❓ Помощь":
+		// TODO
+		return nil
+	}
+
+	return r.showMainMenu(m.Chat.ID)
+}
+
+func (r *router) routeHikeMessage(ctx context.Context, m *tgbot.Message) error {
+	switch m.Text {
 	case "🏔 Хайки":
 		return r.hikeHandler.ShowMenu(ctx, m)
 	case "➕ Создать хайк":
 		return r.hikeHandler.StartCreateHike(ctx, m)
 	case "📋 Список хайков":
 		return r.hikeHandler.ListHikes(ctx, m)
-	case "📥 Заявки":
-		// TODO
-	case "Список заявок":
-		// TODO
-	case "❓ Помощь":
+	}
 
+	return r.showMainMenu(m.Chat.ID)
+}
+
+func (r *router) routeBookingMessage(ctx context.Context, m *tgbot.Message) error {
+	switch m.Text {
+	case "📥 Заявки":
+		return r.bookingHandler.ShowMenu(ctx, m)
+	case "📋 Список заявок":
+		return r.bookingHandler.ListBookings(ctx, m)
+	case "📊 Статистика заявок":
+		// TODO: return r.bookingHandler.Stat(ctx, m)
+		return nil
 	}
 
 	return r.showMainMenu(m.Chat.ID)
@@ -72,11 +104,13 @@ func (r *router) showMainMenu(chatID int64) error {
 }
 
 func (r *router) routeCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
-	switch q.Data {
-	case "confirm":
-		return r.hikeHandler.HandleConfirm(ctx, q)
-	case "cancel":
-		return r.hikeHandler.HandleCancel(ctx, q)
+	switch {
+	case strings.HasPrefix(q.Data, "hike:"):
+		return nil
+		// TODO: return r.hikeHandler.HandleCallback(ctx, q)
+
+	case strings.HasPrefix(q.Data, "booking:"):
+		return r.bookingHandler.HandleCallback(ctx, q)
 	}
 
 	return nil
