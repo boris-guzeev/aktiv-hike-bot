@@ -10,9 +10,14 @@ const (
 	StateCreateTitleEN State = "create_title_en"
 	StateCreateDescRU  State = "create_desc_ru"
 	StateCreateDescEN  State = "create_desc_en"
-	StateCreateDates   State = "create_dates"
-	StateCreatePhoto   State = "create_photo"
-	StateConfirm       State = "confirm"
+
+	StateCreateDates State = "create_dates"
+	StateCreatePhoto State = "create_photo"
+	StateConfirm     State = "confirm"
+
+	StateCreatePrice         State = "create_price"
+	StateCreateDistanceKm    State = "create_distance_km"
+	StateCreateElevationGain State = "create_elevation_gain"
 
 	StateSelectHikeID       State = "select_hike_id"
 	StateSelectedHikeAction State = "selected_hike_action"

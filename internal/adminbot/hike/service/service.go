@@ -6,13 +6,17 @@ import (
 )
 
 type Hike struct {
-	ID            int32
-	TitleRu       string
-	DescriptionRu string
-	StartsAt      time.Time
-	EndsAt        time.Time
-	PhotoFileID   string
-	IsPublished   bool
+	ID             int32
+	TitleRu        string
+	DescriptionRu  string
+	PriceGel       int
+	DistanceKm     float64
+	ElevationGainM int
+	StartsAt       time.Time
+	EndsAt         time.Time
+	PhotoFileID    string
+	ImagePath      string
+	IsPublished    bool
 }
 
 type Repository interface {

@@ -10,9 +10,12 @@ INSERT INTO hikes (
     description_en,
     starts_at, 
     ends_at, 
-    photo_file_id, 
+    photo_file_id,
+    price_gel,
+    distance_km,
+    elevation_gain_m,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 RETURNING id;
 
 -- name: UpdateHike :one
@@ -25,7 +28,9 @@ UPDATE hikes SET
     ends_at        = $7,
     photo_file_id  = $8,
     is_published   = $9,
-    updated_at     = $10
+    distance_km    = $10,
+    elevation_gain_m = $11,
+    updated_at       = $12
 WHERE id = $1
 RETURNING *;
 

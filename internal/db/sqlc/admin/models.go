@@ -28,18 +28,21 @@ type Booking struct {
 }
 
 type Hike struct {
-	ID            int32       `db:"id" json:"id"`
-	TitleRu       string      `db:"title_ru" json:"title_ru"`
-	TitleEn       pgtype.Text `db:"title_en" json:"title_en"`
-	DescriptionRu string      `db:"description_ru" json:"description_ru"`
-	DescriptionEn pgtype.Text `db:"description_en" json:"description_en"`
-	StartsAt      time.Time   `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
-	PhotoFileID   pgtype.Text `db:"photo_file_id" json:"photo_file_id"`
-	IsPublished   bool        `db:"is_published" json:"is_published"`
-	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time   `db:"updated_at" json:"updated_at"`
-	ImagePath     pgtype.Text `db:"image_path" json:"image_path"`
+	ID             int32          `db:"id" json:"id"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
+	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
+	IsPublished    bool           `db:"is_published" json:"is_published"`
+	CreatedAt      time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
+	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
+	PriceGel       int32          `db:"price_gel" json:"price_gel"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
 }
 
 type Payment struct {

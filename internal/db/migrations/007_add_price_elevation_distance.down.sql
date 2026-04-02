@@ -1,0 +1,1 @@
+ALTER TABLE hikes DROP COLUMN price_gel, DROP COLUMN elevation_gain_m, DROP COLUMN distance_km;

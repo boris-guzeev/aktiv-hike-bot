@@ -21,21 +21,27 @@ INSERT INTO hikes (
     description_en,
     starts_at, 
     ends_at, 
-    photo_file_id, 
+    photo_file_id,
+    price_gel,
+    distance_km,
+    elevation_gain_m,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 RETURNING id
 `
 
 type CreateHikeParams struct {
-	TitleRu       string      `db:"title_ru" json:"title_ru"`
-	TitleEn       pgtype.Text `db:"title_en" json:"title_en"`
-	DescriptionRu string      `db:"description_ru" json:"description_ru"`
-	DescriptionEn pgtype.Text `db:"description_en" json:"description_en"`
-	StartsAt      time.Time   `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
-	PhotoFileID   pgtype.Text `db:"photo_file_id" json:"photo_file_id"`
-	IsPublished   bool        `db:"is_published" json:"is_published"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
+	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
+	PriceGel       int32          `db:"price_gel" json:"price_gel"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	IsPublished    bool           `db:"is_published" json:"is_published"`
 }
 
 // =========================================
@@ -50,6 +56,9 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, 
 		arg.StartsAt,
 		arg.EndsAt,
 		arg.PhotoFileID,
+		arg.PriceGel,
+		arg.DistanceKm,
+		arg.ElevationGainM,
 		arg.IsPublished,
 	)
 	var id int32
@@ -97,7 +106,7 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDR
 }
 
 const getHikeByID = `-- name: GetHikeByID :one
-SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path FROM hikes WHERE id = $1
+SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km FROM hikes WHERE id = $1
 `
 
 func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
@@ -116,6 +125,9 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ImagePath,
+		&i.PriceGel,
+		&i.ElevationGainM,
+		&i.DistanceKm,
 	)
 	return i, err
 }
@@ -349,22 +361,26 @@ UPDATE hikes SET
     ends_at        = $7,
     photo_file_id  = $8,
     is_published   = $9,
-    updated_at     = $10
+    distance_km    = $10,
+    elevation_gain_m = $11,
+    updated_at       = $12
 WHERE id = $1
-RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path
+RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km
 `
 
 type UpdateHikeParams struct {
-	ID            int32       `db:"id" json:"id"`
-	TitleRu       string      `db:"title_ru" json:"title_ru"`
-	TitleEn       pgtype.Text `db:"title_en" json:"title_en"`
-	DescriptionRu string      `db:"description_ru" json:"description_ru"`
-	DescriptionEn pgtype.Text `db:"description_en" json:"description_en"`
-	StartsAt      time.Time   `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
-	PhotoFileID   pgtype.Text `db:"photo_file_id" json:"photo_file_id"`
-	IsPublished   bool        `db:"is_published" json:"is_published"`
-	UpdatedAt     time.Time   `db:"updated_at" json:"updated_at"`
+	ID             int32          `db:"id" json:"id"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
+	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
+	IsPublished    bool           `db:"is_published" json:"is_published"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, error) {
@@ -378,6 +394,8 @@ func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, e
 		arg.EndsAt,
 		arg.PhotoFileID,
 		arg.IsPublished,
+		arg.DistanceKm,
+		arg.ElevationGainM,
 		arg.UpdatedAt,
 	)
 	var i Hike
@@ -394,6 +412,9 @@ func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ImagePath,
+		&i.PriceGel,
+		&i.ElevationGainM,
+		&i.DistanceKm,
 	)
 	return i, err
 }

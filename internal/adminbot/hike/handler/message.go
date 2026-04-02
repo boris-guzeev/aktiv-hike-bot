@@ -28,7 +28,14 @@ func (h *HikeHandler) ResetFSM(userID int64) {
 
 func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 	switch h.fsm.State(m.From.ID) {
-	case fsm.StateCreateTitleRU, fsm.StateCreateDescRU, fsm.StateCreateDates, fsm.StateCreatePhoto, fsm.StateConfirm:
+	case fsm.StateCreateTitleRU,
+		fsm.StateCreateDescRU,
+		fsm.StateCreatePrice,
+		fsm.StateCreateDistanceKm,
+		fsm.StateCreateElevationGain,
+		fsm.StateCreateDates,
+		fsm.StateCreatePhoto,
+		fsm.StateConfirm:
 		return h.HandleCreateHike(ctx, m)
 
 	case fsm.StateSelectHikeID:
@@ -313,12 +320,51 @@ func (h *HikeHandler) backToSelectedHikeActions(m *tgbot.Message) error {
 func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) error {
 	switch h.fsm.State(m.From.ID) {
 	case fsm.StateCreateTitleRU:
-		h.fsm.Put(m.From.ID, "title_ru", m.Text)
+		h.fsm.Put(m.From.ID, "title_ru", strings.TrimSpace(m.Text))
 		h.fsm.Set(m.From.ID, fsm.StateCreateDescRU)
 		return h.sendCreateStep(m.Chat.ID, "Введите описание RU:")
 
 	case fsm.StateCreateDescRU:
-		h.fsm.Put(m.From.ID, "description_ru", m.Text)
+		h.fsm.Put(m.From.ID, "description_ru", strings.TrimSpace(m.Text))
+		h.fsm.Set(m.From.ID, fsm.StateCreatePrice)
+		return h.sendCreateStep(m.Chat.ID, "Введите цену в лари (например: 120):")
+
+	case fsm.StateCreatePrice:
+		txt := strings.TrimSpace(m.Text)
+
+		price, err := strconv.Atoi(txt)
+		if err != nil || price < 0 {
+			_ = h.sendCreateStep(m.Chat.ID, "Введите корректную цену в лари целым числом. Например: 120")
+			return nil
+		}
+
+		h.fsm.Put(m.From.ID, "price_gel", strconv.Itoa(price))
+		h.fsm.Set(m.From.ID, fsm.StateCreateDistanceKm)
+		return h.sendCreateStep(m.Chat.ID, "Введите длину маршрута в км (например: 8.5):")
+
+	case fsm.StateCreateDistanceKm:
+		txt := strings.TrimSpace(strings.ReplaceAll(m.Text, ",", "."))
+
+		distance, err := strconv.ParseFloat(txt, 64)
+		if err != nil || distance < 0 {
+			_ = h.sendCreateStep(m.Chat.ID, "Введите корректную длину маршрута. Например: 8.5")
+			return nil
+		}
+
+		h.fsm.Put(m.From.ID, "distance_km", strconv.FormatFloat(distance, 'f', 2, 64))
+		h.fsm.Set(m.From.ID, fsm.StateCreateElevationGain)
+		return h.sendCreateStep(m.Chat.ID, "Введите набор высоты в метрах (например: 650):")
+
+	case fsm.StateCreateElevationGain:
+		txt := strings.TrimSpace(m.Text)
+
+		elevationGain, err := strconv.Atoi(txt)
+		if err != nil || elevationGain < 0 {
+			_ = h.sendCreateStep(m.Chat.ID, "Введите корректный набор высоты в метрах. Например: 650")
+			return nil
+		}
+
+		h.fsm.Put(m.From.ID, "elevation_gain_m", strconv.Itoa(elevationGain))
 		h.fsm.Set(m.From.ID, fsm.StateCreateDates)
 
 		examples := "Введите даты начала и завершения хайка (примеры: 10, 10 12, 10-12, 31 3, 03.02-04.02, 15.12 16.12)."
@@ -349,19 +395,40 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
 		preview := fmt.Sprintf(
-			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nДаты: %s → %s\nФото: добавлено\n\nНапишите 'ok' для сохранения или 'cancel' для отмены.",
+			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nЦена: %s GEL\nДлина: %s км\nНабор высоты: %s м\nДаты: %s → %s\nФото: добавлено\n\nНапишите 'ok' для сохранения или 'cancel' для отмены.",
 			h.fsm.Data(m.From.ID)["title_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
+			h.fsm.Data(m.From.ID)["price_gel"],
+			h.fsm.Data(m.From.ID)["distance_km"],
+			h.fsm.Data(m.From.ID)["elevation_gain_m"],
 			h.fsm.Data(m.From.ID)["starts_at"],
 			h.fsm.Data(m.From.ID)["ends_at"],
 		)
 
-		return h.sendCreateStep(m.Chat.ID, preview)
+		msg := tgbot.NewMessage(m.Chat.ID, preview)
+		msg.ReplyMarkup = hikeUI.HikeConfirmMenu()
+		_, err := h.bot.Send(msg)
+		return err
 
 	case fsm.StateConfirm:
 		txt := strings.TrimSpace(strings.ToLower(m.Text))
 
-		if txt == "cancel" {
+		switch txt {
+		case "✅ подтвердить":
+			if err := h.saveCreatedHike(ctx, m.From.ID); err != nil {
+				_ = h.sendCreateStep(m.Chat.ID, "Ошибка при сохранении хайка :(")
+				return err
+			}
+
+			h.fsm.Reset(m.From.ID)
+
+			msg := tgbot.NewMessage(m.Chat.ID, "Хайк создан!")
+			msg.ReplyMarkup = hikeUI.HikeMenu()
+
+			_, err := h.bot.Send(msg)
+			return err
+
+		case "❌ отмена":
 			h.fsm.Reset(m.From.ID)
 
 			msg := tgbot.NewMessage(m.Chat.ID, "Создание отменено.")
@@ -369,25 +436,11 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 
 			_, err := h.bot.Send(msg)
 			return err
-		}
 
-		if txt != "ok" {
-			_ = h.sendCreateStep(m.Chat.ID, "Напишите 'ok' для сохранения или 'cancel' для отмены.")
+		default:
+			_ = h.sendCreateStep(m.Chat.ID, "Выберите действие кнопкой: ✅ Подтвердить, ❌ Отмена или ⬅️ Назад.")
 			return nil
 		}
-
-		if err := h.saveCreatedHike(ctx, m.From.ID); err != nil {
-			_ = h.sendCreateStep(m.Chat.ID, "Ошибка при сохранении хайка :(")
-			return err
-		}
-
-		h.fsm.Reset(m.From.ID)
-
-		msg := tgbot.NewMessage(m.Chat.ID, "Хайк создан!")
-		msg.ReplyMarkup = hikeUI.HikeMenu()
-
-		_, err := h.bot.Send(msg)
-		return err
 
 	default:
 		h.fsm.Reset(m.From.ID)
@@ -409,12 +462,30 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 		return err
 	}
 
+	priceGel, err := strconv.Atoi(data["price_gel"])
+	if err != nil {
+		return err
+	}
+
+	distanceKm, err := strconv.ParseFloat(data["distance_km"], 64)
+	if err != nil {
+		return err
+	}
+
+	elevationGainM, err := strconv.Atoi(data["elevation_gain_m"])
+	if err != nil {
+		return err
+	}
+
 	hike := service.Hike{
-		TitleRu:       data["title_ru"],
-		DescriptionRu: data["description_ru"],
-		StartsAt:      startAt,
-		EndsAt:        endsAt,
-		PhotoFileID:   data["photo_file_id"],
+		TitleRu:        data["title_ru"],
+		DescriptionRu:  data["description_ru"],
+		PriceGel:       priceGel,
+		DistanceKm:     distanceKm,
+		ElevationGainM: elevationGainM,
+		StartsAt:       startAt,
+		EndsAt:         endsAt,
+		PhotoFileID:    data["photo_file_id"],
 	}
 
 	createdHikeID, err := h.service.CreateHike(ctx, hike)

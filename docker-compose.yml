@@ -31,10 +31,12 @@ services:
       [
         "sh",
         "-c",
-        'migrate -path=/migrations -database "$${DB_DSN}" up || migrate -path=/migrations -database "$${DB_DSN}" up',
+        'migrate -path=/migrations -database "$${DB_DSN}" "$$@"',
+        "--",
       ]
     environment:
       DB_DSN: ${DB_DSN}
+    command: ["up"]
     networks:
       - app_net
 
@@ -77,6 +79,7 @@ services:
     environment:
       CLIENT_BOT_TOKEN: ${CLIENT_BOT_TOKEN}
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
+      ADMIN_BOT_NAME: ${ADMIN_BOT_NAME}
       DB_DSN: ${DB_DSN}
       STORAGE_ROOT: ${STORAGE_ROOT}
       TZ: ${TZ}

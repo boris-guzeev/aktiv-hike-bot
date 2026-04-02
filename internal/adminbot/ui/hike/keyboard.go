@@ -68,3 +68,15 @@ func CreateHikeKeyboard() tgbot.ReplyKeyboardMarkup {
 		),
 	)
 }
+
+func HikeConfirmMenu() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✅ Подтвердить"),
+			tgbot.NewKeyboardButton("❌ Отмена"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("⬅️ Назад"),
+		),
+	)
+}

@@ -12,4 +12,7 @@ seeds:
 	sh -c "go mod download && go run ./cmd/seeds"
 
 migrate:
-	docker compose run --rm migrate
+	docker compose run --rm migrate up
+
+migrate-down:
+	docker compose run --rm migrate down 1
