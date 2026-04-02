@@ -35,13 +35,25 @@ func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) (
 			imagePath = &s
 		}
 
+		var distance float64
+		if rawHike.DistanceKm.Valid {
+			result, err := rawHike.DistanceKm.Float64Value()
+			if err != nil {
+				return nil, logger.WrapError(err)
+			}
+			distance = result.Float64
+		}
+
 		serviceHikes = append(serviceHikes, service.Hike{
-			ID:            rawHike.ID,
-			TitleRu:       rawHike.TitleRu,
-			DescriptionRu: rawHike.DescriptionRu,
-			StartsAt:      rawHike.StartsAt,
-			EndsAt:        rawHike.EndsAt,
-			ImagePath:     imagePath,
+			ID:             rawHike.ID,
+			TitleRu:        rawHike.TitleRu,
+			DescriptionRu:  rawHike.DescriptionRu,
+			StartsAt:       rawHike.StartsAt,
+			EndsAt:         rawHike.EndsAt,
+			ImagePath:      imagePath,
+			PriceGel:       rawHike.PriceGel,
+			DistanceKm:     distance,
+			ElevationGainM: int(rawHike.ElevationGainM.Int32),
 		})
 	}
 

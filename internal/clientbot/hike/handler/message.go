@@ -71,10 +71,31 @@ func buildHikeCaption(hike service.Hike) string {
 	b.WriteString(html.EscapeString(hike.TitleRu))
 	b.WriteString("</b>\n")
 
-	// StartsAt | EndsAt
+	// Dates
 	b.WriteString("🗓 ")
 	b.WriteString(hikeFormatter.FormatDateRange(hike.StartsAt, hike.EndsAt))
 	b.WriteString("\n")
+
+	// Meta
+	var meta []string
+
+	if hike.PriceGel > 0 {
+		meta = append(meta, fmt.Sprintf("💵 %d GEL", hike.PriceGel))
+	}
+
+	if hike.DistanceKm > 0 {
+		meta = append(meta, fmt.Sprintf("🥾 %.1f км", hike.DistanceKm))
+	}
+
+	if hike.ElevationGainM > 0 {
+		meta = append(meta, fmt.Sprintf("⛰ %d м набор", hike.ElevationGainM))
+	}
+
+	if len(meta) > 0 {
+		b.WriteString("\n")
+		b.WriteString(strings.Join(meta, " • "))
+		b.WriteString("\n")
+	}
 
 	// Description
 	if hike.DescriptionRu != "" {

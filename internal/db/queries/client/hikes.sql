@@ -1,5 +1,14 @@
 -- name: ListActualHikes :many
-SELECT id, title_ru, description_ru, starts_at, ends_at, image_path
+SELECT 
+    id, 
+    title_ru, 
+    description_ru, 
+    starts_at, 
+    ends_at, 
+    image_path,
+    price_gel,
+    distance_km,
+    elevation_gain_m
 FROM hikes
 WHERE is_published = true AND ends_at >= now()
 ORDER BY starts_at ASC

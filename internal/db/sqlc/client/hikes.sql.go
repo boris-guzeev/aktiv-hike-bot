@@ -122,7 +122,16 @@ func (q *Queries) GetTelegramUserByID(ctx context.Context, id int32) (GetTelegra
 }
 
 const listActualHikes = `-- name: ListActualHikes :many
-SELECT id, title_ru, description_ru, starts_at, ends_at, image_path
+SELECT 
+    id, 
+    title_ru, 
+    description_ru, 
+    starts_at, 
+    ends_at, 
+    image_path,
+    price_gel,
+    distance_km,
+    elevation_gain_m
 FROM hikes
 WHERE is_published = true AND ends_at >= now()
 ORDER BY starts_at ASC
@@ -135,12 +144,15 @@ type ListActualHikesParams struct {
 }
 
 type ListActualHikesRow struct {
-	ID            int32       `db:"id" json:"id"`
-	TitleRu       string      `db:"title_ru" json:"title_ru"`
-	DescriptionRu string      `db:"description_ru" json:"description_ru"`
-	StartsAt      time.Time   `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time   `db:"ends_at" json:"ends_at"`
-	ImagePath     pgtype.Text `db:"image_path" json:"image_path"`
+	ID             int32          `db:"id" json:"id"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
+	PriceGel       int32          `db:"price_gel" json:"price_gel"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
 }
 
 func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams) ([]ListActualHikesRow, error) {
@@ -159,6 +171,9 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.ImagePath,
+			&i.PriceGel,
+			&i.DistanceKm,
+			&i.ElevationGainM,
 		); err != nil {
 			return nil, err
 		}

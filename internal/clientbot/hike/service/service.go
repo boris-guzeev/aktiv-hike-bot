@@ -7,12 +7,15 @@ import (
 )
 
 type Hike struct {
-	ID            int32
-	TitleRu       string
-	DescriptionRu string
-	StartsAt      time.Time
-	EndsAt        time.Time
-	ImagePath     *string
+	ID             int32
+	TitleRu        string
+	DescriptionRu  string
+	StartsAt       time.Time
+	EndsAt         time.Time
+	ImagePath      *string
+	PriceGel       int32
+	DistanceKm     float64
+	ElevationGainM int
 }
 
 var (
