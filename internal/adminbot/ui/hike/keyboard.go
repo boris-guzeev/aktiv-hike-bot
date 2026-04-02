@@ -23,3 +23,48 @@ func ConfirmKeyboard() tgbot.InlineKeyboardMarkup {
 		),
 	)
 }
+
+func SelectedHikeActionsKeyboard(isPublished bool) tgbot.ReplyKeyboardMarkup {
+	actionText := "📢 Опубликовать хайк"
+	if isPublished {
+		actionText = "🙈 Скрыть хайк"
+	}
+
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton(actionText),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("🧾 Карточка хайка"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("⬅️ Назад"),
+		),
+	)
+}
+
+func PublishConfirmKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✅ Да, опубликовать"),
+			tgbot.NewKeyboardButton("❌ Отмена"),
+		),
+	)
+}
+
+func HideConfirmKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✅ Да, скрыть"),
+			tgbot.NewKeyboardButton("❌ Отмена"),
+		),
+	)
+}
+
+func CreateHikeKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("⬅️ Назад"),
+		),
+	)
+}

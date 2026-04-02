@@ -46,8 +46,13 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 }
 
 func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
-	if r.hikeHandler.InProgress(m.From.ID) {
-		return r.hikeHandler.HandleCreateHike(ctx, m)
+	if m.Text == "⬅️ Назад" {
+		r.hikeHandler.ResetFSM(m.From.ID)
+		return r.showMainMenu(m.Chat.ID)
+	}
+
+	if r.hikeHandler.InProgressFSM(m.From.ID) {
+		return r.hikeHandler.HandleFSM(ctx, m)
 	}
 
 	switch m.Text {
@@ -58,6 +63,7 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 		return r.routeBookingMessage(ctx, m)
 
 	case "⬅️ Назад":
+		// Сбросить любое текущее состояние
 		return r.showMainMenu(m.Chat.ID)
 
 	case "❓ Помощь":

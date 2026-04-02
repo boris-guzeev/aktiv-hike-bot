@@ -19,7 +19,7 @@ func New(q *admin.Queries) service.Repository {
 func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error) {
 	rawHike, err := r.queries.GetHikeByID(ctx, id)
 	if err != nil {
-		return service.Hike{}, nil
+		return service.Hike{}, err
 	}
 	return service.Hike{
 		ID:            rawHike.ID,

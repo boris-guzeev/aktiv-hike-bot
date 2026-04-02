@@ -13,6 +13,11 @@ const (
 	StateCreateDates   State = "create_dates"
 	StateCreatePhoto   State = "create_photo"
 	StateConfirm       State = "confirm"
+
+	StateSelectHikeID       State = "select_hike_id"
+	StateSelectedHikeAction State = "selected_hike_action"
+	StateConfirmPublishHike State = "confirm_publish_hike"
+	StateConfirmHideHike    State = "confirm_hide_hike"
 )
 
 type session struct {
