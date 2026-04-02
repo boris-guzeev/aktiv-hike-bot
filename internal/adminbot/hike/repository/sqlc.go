@@ -103,12 +103,27 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 		Valid:  hike.PhotoFileID != "",
 	}
 
+	distanceKm := pgtype.Numeric{}
+	if hike.DistanceKm != 0 {
+		if err := distanceKm.Scan(hike.DistanceKm); err != nil {
+			return 0, err
+		}
+	}
+
+	elevationGainM := pgtype.Int4{
+		Int32: int32(hike.ElevationGainM),
+		Valid: hike.ElevationGainM != 0,
+	}
+
 	return r.queries.CreateHike(ctx, admin.CreateHikeParams{
-		TitleRu:       hike.TitleRu,
-		DescriptionRu: hike.DescriptionRu,
-		StartsAt:      hike.StartsAt,
-		EndsAt:        hike.EndsAt,
-		PhotoFileID:   photoFileID,
+		TitleRu:        hike.TitleRu,
+		DescriptionRu:  hike.DescriptionRu,
+		StartsAt:       hike.StartsAt,
+		EndsAt:         hike.EndsAt,
+		PhotoFileID:    photoFileID,
+		PriceGel:       hike.PriceGel,
+		DistanceKm:     distanceKm,
+		ElevationGainM: elevationGainM,
 	})
 }
 

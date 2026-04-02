@@ -480,7 +480,7 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 	hike := service.Hike{
 		TitleRu:        data["title_ru"],
 		DescriptionRu:  data["description_ru"],
-		PriceGel:       priceGel,
+		PriceGel:       int32(priceGel),
 		DistanceKm:     distanceKm,
 		ElevationGainM: elevationGainM,
 		StartsAt:       startAt,

@@ -9,7 +9,7 @@ type Hike struct {
 	ID             int32
 	TitleRu        string
 	DescriptionRu  string
-	PriceGel       int
+	PriceGel       int32
 	DistanceKm     float64
 	ElevationGainM int
 	StartsAt       time.Time
