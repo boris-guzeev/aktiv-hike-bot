@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16
-    container_name: aktivhike_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -46,7 +45,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: admin
-    container_name: admin_bot
     depends_on:
       db:
         condition: service_healthy
@@ -70,7 +68,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: client
-    container_name: client_bot
     depends_on:
       db:
         condition: service_healthy
