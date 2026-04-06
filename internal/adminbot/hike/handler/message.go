@@ -395,7 +395,15 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
 		preview := fmt.Sprintf(
-			"Проверьте данные:\n\nНазвание: %s\nОписание: %s\nЦена: %s GEL\nДлина: %s км\nНабор высоты: %s м\nДаты: %s → %s\nФото: добавлено\n\nНапишите 'ok' для сохранения или 'cancel' для отмены.",
+			"📋 <b>Проверьте данные хайка</b>\n\n"+
+				"🏔 Название: %s\n"+
+				"📝 Описание: %s\n"+
+				"💰 Цена: %s GEL\n"+
+				"📏 Длина: %s км\n"+
+				"⛰ Набор высоты: %s м\n"+
+				"🗓 Даты: %s → %s\n"+
+				"📷 Фото: добавлено\n\n"+
+				"Выберите действие ниже:",
 			h.fsm.Data(m.From.ID)["title_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
 			h.fsm.Data(m.From.ID)["price_gel"],
