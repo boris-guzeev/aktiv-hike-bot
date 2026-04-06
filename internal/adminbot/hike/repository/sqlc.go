@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
@@ -106,7 +107,7 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 
 	distanceKm := pgtype.Numeric{}
 	if hike.DistanceKm != 0 {
-		if err := distanceKm.Scan(hike.DistanceKm); err != nil {
+		if err := distanceKm.Scan(fmt.Sprintf("%.2f", hike.DistanceKm)); err != nil {
 			return 0, logger.WrapError(err)
 		}
 	}
