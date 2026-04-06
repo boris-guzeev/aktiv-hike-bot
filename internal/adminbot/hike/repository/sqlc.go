@@ -5,6 +5,7 @@ import (
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -19,7 +20,7 @@ func New(q *admin.Queries) service.Repository {
 func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error) {
 	rawHike, err := r.queries.GetHikeByID(ctx, id)
 	if err != nil {
-		return service.Hike{}, err
+		return service.Hike{}, logger.WrapError(err)
 	}
 	return service.Hike{
 		ID:            rawHike.ID,
@@ -37,7 +38,7 @@ func (r repository) ListHikes(ctx context.Context, limit, offset int32) ([]servi
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, err
+		return nil, logger.WrapError(err)
 	}
 
 	var hikes []service.Hike
@@ -61,7 +62,7 @@ func (r repository) ListActualHikes(ctx context.Context, limit, offset int32) ([
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, err
+		return nil, logger.WrapError(err)
 	}
 
 	var hikes []service.Hike
@@ -106,7 +107,7 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 	distanceKm := pgtype.Numeric{}
 	if hike.DistanceKm != 0 {
 		if err := distanceKm.Scan(hike.DistanceKm); err != nil {
-			return 0, err
+			return 0, logger.WrapError(err)
 		}
 	}
 
