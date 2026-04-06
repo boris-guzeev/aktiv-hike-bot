@@ -37,7 +37,6 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 	// Private callbacks
 	if q := u.CallbackQuery; q != nil && q.Message != nil && q.Message.Chat.IsPrivate() {
 		if r.isAdmin(q.From.ID) {
-			// TODO: возможно уже тут разделять роутинг по назначению hike_ или booking_
 			return r.routeCallback(ctx, q)
 		}
 	}
@@ -62,13 +61,8 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 	case "📥 Заявки", "📋 Список заявок", "📊 Статистика заявок":
 		return r.routeBookingMessage(ctx, m)
 
-	case "⬅️ Назад":
-		// Сбросить любое текущее состояние
-		return r.showMainMenu(m.Chat.ID)
-
 	case "❓ Помощь":
-		// TODO
-		return nil
+		return r.showHelp(m.Chat.ID)
 	}
 
 	return r.showMainMenu(m.Chat.ID)
@@ -99,6 +93,77 @@ func (r *router) routeBookingMessage(ctx context.Context, m *tgbot.Message) erro
 	}
 
 	return r.showMainMenu(m.Chat.ID)
+}
+
+// TODO: убрать из роутера
+func (r *router) showHelp(chatID int64) error {
+	text := `❓ <b>Помощь для администратора</b>
+
+━━━━━━━━━━━━━━━
+🏔 <b>Как создать хайк</b>
+
+1️⃣ Откройте раздел <b>🏔 Хайки</b>  
+2️⃣ Нажмите <b>➕ Создать хайк</b>  
+3️⃣ Заполните поля:
+• Название  
+• Описание  
+• Даты  
+• Цена  
+• Дистанция  
+• Набор высоты  
+• Фото  
+
+4️⃣ Проверьте данные  
+5️⃣ Нажмите <b>✅ Подтвердить</b>
+
+После этого хайк появится в клиентском боте
+
+━━━━━━━━━━━━━━━
+📋 <b>Работа с хайками</b>
+
+📋 Список хайков — посмотреть все хайки  
+Вы можете:
+• Опубликовать хайк  
+• Скрыть хайк  
+• Редактировать позже (в будущем)
+
+━━━━━━━━━━━━━━━
+📥 <b>Работа с заявками</b>
+
+Когда клиент бронирует хайк:
+• В админ-чате появляется заявка  
+• Любой менеджер может взять её в работу  
+
+Статусы заявок:
+🟡 В работе — менеджер взял заявку  
+🟢 Подтверждена — клиент подтвердил участие  
+🏁 Завершена — хайк состоялся  
+🔴 Отменена — заявка отменена  
+
+━━━━━━━━━━━━━━━
+📋 <b>Как работать с заявкой</b>
+
+1️⃣ Откройте <b>📋 Список заявок</b>  
+2️⃣ Выберите заявку  
+3️⃣ Нажмите нужное действие:
+• ✅ Подтвердить  
+• ❌ Отменить  
+• 🏁 Завершить  
+
+━━━━━━━━━━━━━━━
+💡 <b>Важно</b>
+
+• Новые заявки приходят автоматически  
+• Один менеджер — одна заявка  
+• После взятия заявки другие менеджеры её не обрабатывают  
+
+Если возникли проблемы — напишите разработчику 😄`
+
+	msg := tgbot.NewMessage(chatID, text)
+	msg.ParseMode = "HTML"
+
+	_, err := r.bot.Send(msg)
+	return err
 }
 
 func (r *router) showMainMenu(chatID int64) error {

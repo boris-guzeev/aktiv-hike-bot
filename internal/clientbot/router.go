@@ -51,13 +51,12 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 	switch m.Text {
 	case "🥾 Актуальные хайки":
 		return r.hikeHandler.ListActualHikes(ctx, m)
-		// case: "🧾 Мои записи":
-		// 	// TODO
 
-		// case: "ℹ️ Помощь"
-		// 	// TODO
-		// }
+	// case "🧾 Мои записи":
+	// 	// TODO позже
 
+	case "ℹ️ Помощь":
+		return r.showHelp(m.Chat.ID)
 	}
 
 	return r.showMainMenu(m.Chat.ID)
@@ -66,6 +65,28 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 func (r *router) showMainMenu(chatID int64) error {
 	msg := tgbot.NewMessage(chatID, "Выберите раздел")
 	msg.ReplyMarkup = common.MainMenu()
+
+	_, err := r.bot.Send(msg)
+	return err
+}
+
+// TODO: убрать из роутера
+func (r *router) showHelp(chatID int64) error {
+	text := `ℹ️ <b>Как забронировать хайк</b>
+
+1️⃣ Откройте раздел <b>🥾 Актуальные хайки</b>  
+2️⃣ Выберите понравившийся хайк  
+3️⃣ Нажмите кнопку <b>🥾 Забронировать</b>  
+4️⃣ Дождитесь ответа менеджера  
+
+После бронирования:
+• Менеджер получит вашу заявку  
+• Свяжется с вами  
+• Подтвердит участие  
+`
+
+	msg := tgbot.NewMessage(chatID, text)
+	msg.ParseMode = "HTML"
 
 	_, err := r.bot.Send(msg)
 	return err
