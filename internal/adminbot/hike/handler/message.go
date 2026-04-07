@@ -516,41 +516,41 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 func (h *HikeHandler) saveImage(ctx context.Context, fileID string, hikeID int32) (string, error) {
 	file, err := h.bot.GetFile(tgbot.FileConfig{FileID: fileID})
 	if err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 
 	url := file.Link(h.bot.Token)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected http-status code: %d", resp.StatusCode)
+		return "", logger.WrapError(fmt.Errorf("unexpected http-status code: %d", resp.StatusCode))
 	}
 
 	dir := filepath.Join(h.storageRoot, "hikes")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 
 	path := filepath.Join(dir, fmt.Sprintf("%d.jpg", hikeID))
 
 	out, err := os.Create(path)
 	if err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 	defer out.Close()
 
 	if _, err = io.Copy(out, resp.Body); err != nil {
-		return "", err
+		return "", logger.WrapError(err)
 	}
 
 	return fmt.Sprintf("hikes/%d.jpg", hikeID), nil
