@@ -462,27 +462,36 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 
 	startAt, err := time.ParseInLocation("02.01.2006 15:04", data["starts_at"], h.loc)
 	if err != nil {
-		return err
+		return logger.WrapError(err)
 	}
 
 	endsAt, err := time.ParseInLocation("02.01.2006 15:04", data["ends_at"], h.loc)
 	if err != nil {
-		return err
+		return logger.WrapError(err)
 	}
 
 	priceGel, err := strconv.Atoi(data["price_gel"])
 	if err != nil {
-		return err
+		return logger.WrapError(err)
 	}
 
 	distanceKm, err := strconv.ParseFloat(data["distance_km"], 64)
 	if err != nil {
-		return err
+		return logger.WrapError(err)
 	}
 
 	elevationGainM, err := strconv.Atoi(data["elevation_gain_m"])
 	if err != nil {
-		return err
+		return logger.WrapError(err)
+	}
+
+	previewRu := strings.TrimSpace(h.fsm.Data(userID)["preview_ru"])
+	if previewRu == "" {
+		return logger.WrapError(errors.New("preview_ru is empty"))
+	}
+
+	if countClientCaption(data) > 1024 {
+		return logger.WrapError(errors.New("client caption is too long"))
 	}
 
 	hike := service.Hike{
