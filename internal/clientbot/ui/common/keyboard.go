@@ -6,7 +6,8 @@ func MainMenu() tgbot.ReplyKeyboardMarkup {
 	return tgbot.NewReplyKeyboard(
 		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("🥾 Актуальные хайки"),
-			tgbot.NewKeyboardButton("🧾 Мои записи"),
+			// TODO: вернуть когда будет готов этот функционал
+			// tgbot.NewKeyboardButton("🧾 Мои записи"),
 		),
 		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("ℹ️ Помощь"),
