@@ -119,6 +119,7 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 
 	return r.queries.CreateHike(ctx, admin.CreateHikeParams{
 		TitleRu:        hike.TitleRu,
+		PreviewRu:      hike.PreviewRu,
 		DescriptionRu:  hike.DescriptionRu,
 		StartsAt:       hike.StartsAt,
 		EndsAt:         hike.EndsAt,

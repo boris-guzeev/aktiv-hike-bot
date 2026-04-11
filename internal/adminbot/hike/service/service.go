@@ -8,6 +8,7 @@ import (
 type Hike struct {
 	ID             int32
 	TitleRu        string
+	PreviewRu      string
 	DescriptionRu  string
 	PriceGel       int32
 	DistanceKm     float64

@@ -5,11 +5,12 @@ import "sync"
 type State string
 
 const (
-	StateIdle          State = "idle"
-	StateCreateTitleRU State = "create_title_ru"
-	StateCreateTitleEN State = "create_title_en"
-	StateCreateDescRU  State = "create_desc_ru"
-	StateCreateDescEN  State = "create_desc_en"
+	StateIdle            State = "idle"
+	StateCreateTitleRU   State = "create_title_ru"
+	StateCreateTitleEN   State = "create_title_en"
+	StateCreatePreviewRU State = "create_preview_ru"
+	StateCreateDescRU    State = "create_desc_ru"
+	StateCreateDescEN    State = "create_desc_en"
 
 	StateCreateDates State = "create_dates"
 	StateCreatePhoto State = "create_photo"

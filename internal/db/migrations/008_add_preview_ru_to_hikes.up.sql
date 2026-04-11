@@ -1,0 +1,2 @@
+ALTER TABLE hikes
+    ADD COLUMN preview_ru TEXT NOT NULL DEFAULT '';

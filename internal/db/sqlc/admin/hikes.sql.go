@@ -16,6 +16,7 @@ const createHike = `-- name: CreateHike :one
 
 INSERT INTO hikes (
     title_ru, 
+    preview_ru,
     title_en, 
     description_ru, 
     description_en,
@@ -26,12 +27,13 @@ INSERT INTO hikes (
     distance_km,
     elevation_gain_m,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 RETURNING id
 `
 
 type CreateHikeParams struct {
 	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
 	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
 	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
 	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
@@ -50,6 +52,7 @@ type CreateHikeParams struct {
 func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createHike,
 		arg.TitleRu,
+		arg.PreviewRu,
 		arg.TitleEn,
 		arg.DescriptionRu,
 		arg.DescriptionEn,
@@ -106,7 +109,7 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDR
 }
 
 const getHikeByID = `-- name: GetHikeByID :one
-SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km FROM hikes WHERE id = $1
+SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km, preview_ru FROM hikes WHERE id = $1
 `
 
 func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
@@ -128,6 +131,7 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
 		&i.PriceGel,
 		&i.ElevationGainM,
 		&i.DistanceKm,
+		&i.PreviewRu,
 	)
 	return i, err
 }
@@ -365,7 +369,7 @@ UPDATE hikes SET
     elevation_gain_m = $11,
     updated_at       = $12
 WHERE id = $1
-RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km
+RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km, preview_ru
 `
 
 type UpdateHikeParams struct {
@@ -415,6 +419,7 @@ func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, e
 		&i.PriceGel,
 		&i.ElevationGainM,
 		&i.DistanceKm,
+		&i.PreviewRu,
 	)
 	return i, err
 }

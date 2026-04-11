@@ -5,6 +5,7 @@
 -- name: CreateHike :one
 INSERT INTO hikes (
     title_ru, 
+    preview_ru,
     title_en, 
     description_ru, 
     description_en,
@@ -15,7 +16,7 @@ INSERT INTO hikes (
     distance_km,
     elevation_gain_m,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 RETURNING id;
 
 -- name: UpdateHike :one

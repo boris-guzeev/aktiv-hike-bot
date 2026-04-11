@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,11 +11,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/parser"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -29,6 +32,7 @@ func (h *HikeHandler) ResetFSM(userID int64) {
 func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 	switch h.fsm.State(m.From.ID) {
 	case fsm.StateCreateTitleRU,
+		fsm.StateCreatePreviewRU,
 		fsm.StateCreateDescRU,
 		fsm.StateCreatePrice,
 		fsm.StateCreateDistanceKm,
@@ -321,12 +325,36 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 	switch h.fsm.State(m.From.ID) {
 	case fsm.StateCreateTitleRU:
 		h.fsm.Put(m.From.ID, "title_ru", strings.TrimSpace(m.Text))
+		h.fsm.Set(m.From.ID, fsm.StateCreatePreviewRU)
+		return h.sendCreateStep(m.Chat.ID, "Введите превью RU (1024 символа):")
+
+	case fsm.StateCreatePreviewRU:
+		preview := strings.TrimSpace(m.Text)
+		if preview == "" {
+			_ = h.sendCreateStep(m.Chat.ID, "Введите краткое описание для превью.")
+			return nil
+		}
+
+		count := utf8.RuneCountInString(preview)
+		if count > 1024 {
+			_ = h.sendCreateStep(
+				m.Chat.ID,
+				fmt.Sprintf(
+					"Превью слишком длинное: %d символов из 1024 допустимых. Сократите текст.",
+					count,
+				),
+			)
+			return nil
+		}
+
+		h.fsm.Put(m.From.ID, "preview_ru", preview)
 		h.fsm.Set(m.From.ID, fsm.StateCreateDescRU)
 		return h.sendCreateStep(m.Chat.ID, "Введите описание RU:")
 
 	case fsm.StateCreateDescRU:
 		h.fsm.Put(m.From.ID, "description_ru", strings.TrimSpace(m.Text))
 		h.fsm.Set(m.From.ID, fsm.StateCreatePrice)
+
 		return h.sendCreateStep(m.Chat.ID, "Введите цену в лари (например: 120):")
 
 	case fsm.StateCreatePrice:
@@ -392,29 +420,47 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 
 		photo := m.Photo[len(m.Photo)-1]
 		h.fsm.Put(m.From.ID, "photo_file_id", photo.FileID)
+
+		clientCaptionLen := countClientCaption(h.fsm.Data(m.From.ID))
+		if clientCaptionLen > 1024 {
+			_ = h.sendCreateStep(
+				m.Chat.ID,
+				fmt.Sprintf(
+					"Итоговый Telegram caption слишком длинный: %d символов из 1024 допустимых. Сократите превью.",
+					clientCaptionLen,
+				),
+			)
+			return nil
+		}
 		h.fsm.Set(m.From.ID, fsm.StateConfirm)
 
+		// TODO: вынести формирование Caption в общий пакет
 		preview := fmt.Sprintf(
 			"📋 <b>Проверьте данные хайка</b>\n\n"+
 				"🏔 Название: %s\n"+
+				"🔎 Превью: %s\n"+
 				"📝 Описание: %s\n"+
 				"💰 Цена: %s GEL\n"+
 				"📏 Длина: %s км\n"+
 				"⛰ Набор высоты: %s м\n"+
 				"🗓 Даты: %s → %s\n"+
 				"📷 Фото: добавлено\n\n"+
+				"📐 Общий Telegram caption: %d / 1024\n\n"+
 				"Выберите действие ниже:",
 			h.fsm.Data(m.From.ID)["title_ru"],
+			h.fsm.Data(m.From.ID)["preview_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
 			h.fsm.Data(m.From.ID)["price_gel"],
 			h.fsm.Data(m.From.ID)["distance_km"],
 			h.fsm.Data(m.From.ID)["elevation_gain_m"],
 			h.fsm.Data(m.From.ID)["starts_at"],
 			h.fsm.Data(m.From.ID)["ends_at"],
+			clientCaptionLen,
 		)
 
 		msg := tgbot.NewMessage(m.Chat.ID, preview)
 		msg.ReplyMarkup = hikeUI.HikeConfirmMenu()
+		msg.ParseMode = tgbot.ModeHTML
 		_, err := h.bot.Send(msg)
 		return err
 
@@ -446,7 +492,9 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 			return err
 
 		default:
-			_ = h.sendCreateStep(m.Chat.ID, "Выберите действие кнопкой: ✅ Подтвердить, ❌ Отмена или ⬅️ Назад.")
+			msg := tgbot.NewMessage(m.Chat.ID, "Выберите действие кнопкой: ✅ Подтвердить, ❌ Отмена или ⬅️ Назад.")
+			msg.ReplyMarkup = hikeUI.HikeConfirmMenu()
+			_, _ = h.bot.Send(msg)
 			return nil
 		}
 
@@ -455,6 +503,24 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Сбросил состояние."))
 		return err
 	}
+}
+
+func countClientCaption(data map[string]string) int {
+	return utf8.RuneCountInString(fmt.Sprintf(
+		"🏔 <b>%s</b>\n\n"+
+			"%s\n\n"+
+			"💰 %s GEL\n"+
+			"📏 %s км\n"+
+			"⛰ %s м\n"+
+			"🗓 %s → %s",
+		data["title_ru"],
+		data["preview_ru"],
+		data["price_gel"],
+		data["distance_km"],
+		data["elevation_gain_m"],
+		data["starts_at"],
+		data["ends_at"],
+	))
 }
 
 func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
@@ -496,6 +562,7 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 
 	hike := service.Hike{
 		TitleRu:        data["title_ru"],
+		PreviewRu:      previewRu,
 		DescriptionRu:  data["description_ru"],
 		PriceGel:       int32(priceGel),
 		DistanceKm:     distanceKm,
