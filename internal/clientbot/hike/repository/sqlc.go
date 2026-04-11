@@ -47,7 +47,7 @@ func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) (
 		serviceHikes = append(serviceHikes, service.Hike{
 			ID:             rawHike.ID,
 			TitleRu:        rawHike.TitleRu,
-			DescriptionRu:  rawHike.DescriptionRu,
+			PreviewRu:      rawHike.PreviewRu,
 			StartsAt:       rawHike.StartsAt,
 			EndsAt:         rawHike.EndsAt,
 			ImagePath:      imagePath,

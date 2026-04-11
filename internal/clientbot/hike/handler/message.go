@@ -97,10 +97,10 @@ func buildHikeCaption(hike service.Hike) string {
 		b.WriteString("\n")
 	}
 
-	// Description
-	if hike.DescriptionRu != "" {
+	// Preview field
+	if hike.PreviewRu != "" {
 		b.WriteString("\n")
-		b.WriteString(html.EscapeString(hike.DescriptionRu))
+		b.WriteString(html.EscapeString(hike.PreviewRu))
 	}
 
 	return b.String()

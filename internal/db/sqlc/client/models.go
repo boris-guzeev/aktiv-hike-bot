@@ -43,6 +43,7 @@ type Hike struct {
 	PriceGel       int32          `db:"price_gel" json:"price_gel"`
 	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
 	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
 }
 
 type Payment struct {

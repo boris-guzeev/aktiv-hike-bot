@@ -125,7 +125,7 @@ const listActualHikes = `-- name: ListActualHikes :many
 SELECT 
     id, 
     title_ru, 
-    description_ru, 
+    preview_ru,
     starts_at, 
     ends_at, 
     image_path,
@@ -146,7 +146,7 @@ type ListActualHikesParams struct {
 type ListActualHikesRow struct {
 	ID             int32          `db:"id" json:"id"`
 	TitleRu        string         `db:"title_ru" json:"title_ru"`
-	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
 	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
 	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
 	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
@@ -167,7 +167,7 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.TitleRu,
-			&i.DescriptionRu,
+			&i.PreviewRu,
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.ImagePath,

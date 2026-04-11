@@ -9,6 +9,7 @@ import (
 type Hike struct {
 	ID             int32
 	TitleRu        string
+	PreviewRu      string
 	DescriptionRu  string
 	StartsAt       time.Time
 	EndsAt         time.Time

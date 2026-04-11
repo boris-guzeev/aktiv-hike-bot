@@ -2,7 +2,7 @@
 SELECT 
     id, 
     title_ru, 
-    description_ru, 
+    preview_ru,
     starts_at, 
     ends_at, 
     image_path,
