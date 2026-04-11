@@ -96,6 +96,8 @@ func (r *router) routeClientCallback(ctx context.Context, q *tgbot.CallbackQuery
 	switch {
 	case strings.HasPrefix(q.Data, "book_hike:"):
 		return r.bookHandler.BookHike(ctx, q)
+	case strings.HasPrefix(q.Data, "details_hike:"):
+		return r.hikeHandler.DetailsHike(ctx, q)
 	case q.Data == "booking_sent":
 		return r.bookHandler.BookSent(ctx, q)
 	}

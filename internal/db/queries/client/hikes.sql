@@ -15,7 +15,12 @@ ORDER BY starts_at ASC
 LIMIT $1 OFFSET $2;
 
 -- name: GetHike :one
-SELECT id, title_ru, starts_at, ends_at
+SELECT 
+    id, 
+    title_ru, 
+    description_ru,
+    starts_at, 
+    ends_at
 FROM hikes
 WHERE id = $1 AND is_published = true; 
 

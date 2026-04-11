@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
-	hikeFormatter "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/ui/hike"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
+	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/ui/hike"
 )
 
 func (h *Handler) ListActualHikes(ctx context.Context, m *tgbot.Message) error {
@@ -28,14 +29,7 @@ func (h *Handler) ListActualHikes(ctx context.Context, m *tgbot.Message) error {
 	for _, r := range rows {
 		caption := buildHikeCaption(r)
 
-		kb := tgbot.NewInlineKeyboardMarkup(
-			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData(
-					"🥾 Забронировать",
-					fmt.Sprintf("book_hike:%d", r.ID),
-				),
-			),
-		)
+		kb := hikeUI.PreviewHikeActions(r)
 
 		if r.ImagePath != nil && *r.ImagePath != "" {
 			imagePath := filepath.Join(h.cfg.StorageRoot, *r.ImagePath)
@@ -73,7 +67,7 @@ func buildHikeCaption(hike service.Hike) string {
 
 	// Dates
 	b.WriteString("🗓 ")
-	b.WriteString(hikeFormatter.FormatDateRange(hike.StartsAt, hike.EndsAt))
+	b.WriteString(hikeUI.FormatDateRange(hike.StartsAt, hike.EndsAt))
 	b.WriteString("\n")
 
 	// Meta

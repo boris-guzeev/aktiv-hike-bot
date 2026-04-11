@@ -72,16 +72,22 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDR
 }
 
 const getHike = `-- name: GetHike :one
-SELECT id, title_ru, starts_at, ends_at
+SELECT 
+    id, 
+    title_ru, 
+    description_ru,
+    starts_at, 
+    ends_at
 FROM hikes
 WHERE id = $1 AND is_published = true
 `
 
 type GetHikeRow struct {
-	ID       int32     `db:"id" json:"id"`
-	TitleRu  string    `db:"title_ru" json:"title_ru"`
-	StartsAt time.Time `db:"starts_at" json:"starts_at"`
-	EndsAt   time.Time `db:"ends_at" json:"ends_at"`
+	ID            int32     `db:"id" json:"id"`
+	TitleRu       string    `db:"title_ru" json:"title_ru"`
+	DescriptionRu string    `db:"description_ru" json:"description_ru"`
+	StartsAt      time.Time `db:"starts_at" json:"starts_at"`
+	EndsAt        time.Time `db:"ends_at" json:"ends_at"`
 }
 
 func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
@@ -90,6 +96,7 @@ func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.TitleRu,
+		&i.DescriptionRu,
 		&i.StartsAt,
 		&i.EndsAt,
 	)

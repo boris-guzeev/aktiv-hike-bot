@@ -69,10 +69,11 @@ func (r *repository) GetHike(ctx context.Context, id int32) (service.Hike, error
 		return service.Hike{}, logger.WrapError(err)
 	}
 	hike := service.Hike{
-		ID:       hikeRaw.ID,
-		TitleRu:  hikeRaw.TitleRu,
-		StartsAt: hikeRaw.StartsAt,
-		EndsAt:   hikeRaw.EndsAt,
+		ID:            hikeRaw.ID,
+		TitleRu:       hikeRaw.TitleRu,
+		DescriptionRu: hikeRaw.DescriptionRu,
+		StartsAt:      hikeRaw.StartsAt,
+		EndsAt:        hikeRaw.EndsAt,
 	}
 
 	return hike, nil
