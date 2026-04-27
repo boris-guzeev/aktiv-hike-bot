@@ -2,6 +2,7 @@ package booking
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -126,6 +127,13 @@ func (h *BookingHandler) ApplyAction(ctx context.Context, q *tgbot.CallbackQuery
 		}
 	}
 
+	if err := h.notifyClientStatusChanged(updatedBooking); err != nil {
+		h.log.WithField("booking_id", updatedBooking.ID).
+			WithField("user_tg_id", updatedBooking.UserTgID).
+			WithField("username", updatedBooking.UserName).
+			StructuredError("failed to notify client about booking status change", err)
+	}
+
 	edit := tgbot.NewEditMessageReplyMarkup(
 		q.Message.Chat.ID,
 		q.Message.MessageID,
@@ -137,6 +145,31 @@ func (h *BookingHandler) ApplyAction(ctx context.Context, q *tgbot.CallbackQuery
 	}
 
 	return h.answerCallback(q.ID, successText)
+}
+
+// TODO: Реализовать передачу сообщения от Админ-бота к Клиент-боту
+func (h *BookingHandler) notifyClientStatusChanged(booking bookingService.Booking) error {
+	if booking.UserTgID == 0 {
+		return nil
+	}
+
+	var text string
+
+	// TODO: Вынести в internal/adminbot/ui/hike/text.go
+	switch booking.Status {
+	case bookingService.StatusConfirmed:
+		text = fmt.Sprintf("Ваша заявка на участие в хайке \"%s\" подтверждена ✅", booking.HikeTitle)
+	case bookingService.StatusCanceled:
+		text = fmt.Sprintf("Ваша заявка на участие в хайке \"%s\" отменена.", booking.HikeTitle)
+	case bookingService.StatusCompleted:
+		text = fmt.Sprintf("Хайк \"%s\" завершён. Спасибо за участие! 🙌", booking.HikeTitle)
+	default:
+		return nil
+	}
+
+	msg := tgbot.NewMessage(booking.UserTgID, text)
+	_, err := h.bot.Send(msg)
+	return logger.WrapError(err)
 }
 
 func (h *BookingHandler) RestoreActions(ctx context.Context, q *tgbot.CallbackQuery) error {

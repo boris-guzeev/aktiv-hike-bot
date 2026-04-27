@@ -68,7 +68,7 @@ func main() {
 	// --- Booking --- /
 	bookingRepo := bookingRepository.New(queries)
 	bookingSvc := bookingService.New(bookingRepo)
-	bookingHnd := bookingHandler.New(bot, userSvc, bookingSvc)
+	bookingHnd := bookingHandler.New(log, bot, userSvc, bookingSvc)
 
 	// Init router
 	r := adminbot.NewRouter(bot, cfg.AdminChatID, hikeHnd, bookingHnd)
