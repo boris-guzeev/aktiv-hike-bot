@@ -22,7 +22,7 @@ INSERT INTO hikes (
     description_en,
     starts_at, 
     ends_at, 
-    photo_file_id,
+    image_path,
     price_gel,
     distance_km,
     elevation_gain_m,
@@ -39,7 +39,7 @@ type CreateHikeParams struct {
 	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
 	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
 	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
-	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
+	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
 	PriceGel       int32          `db:"price_gel" json:"price_gel"`
 	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
 	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
@@ -58,7 +58,7 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, 
 		arg.DescriptionEn,
 		arg.StartsAt,
 		arg.EndsAt,
-		arg.PhotoFileID,
+		arg.ImagePath,
 		arg.PriceGel,
 		arg.DistanceKm,
 		arg.ElevationGainM,

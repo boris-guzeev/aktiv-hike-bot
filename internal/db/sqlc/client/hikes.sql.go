@@ -71,35 +71,69 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDR
 	return i, err
 }
 
-const getHike = `-- name: GetHike :one
+const getHikeCard = `-- name: GetHikeCard :one
 SELECT 
     id, 
     title_ru, 
-    description_ru,
     starts_at, 
-    ends_at
+    ends_at, 
+    price_gel,
+    distance_km,
+    elevation_gain_m,
+    preview_ru,
+    image_path
 FROM hikes
 WHERE id = $1 AND is_published = true
 `
 
-type GetHikeRow struct {
-	ID            int32     `db:"id" json:"id"`
-	TitleRu       string    `db:"title_ru" json:"title_ru"`
-	DescriptionRu string    `db:"description_ru" json:"description_ru"`
-	StartsAt      time.Time `db:"starts_at" json:"starts_at"`
-	EndsAt        time.Time `db:"ends_at" json:"ends_at"`
+type GetHikeCardRow struct {
+	ID             int32          `db:"id" json:"id"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	PriceGel       int32          `db:"price_gel" json:"price_gel"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
+	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
 }
 
-func (q *Queries) GetHike(ctx context.Context, id int32) (GetHikeRow, error) {
-	row := q.db.QueryRow(ctx, getHike, id)
-	var i GetHikeRow
+func (q *Queries) GetHikeCard(ctx context.Context, id int32) (GetHikeCardRow, error) {
+	row := q.db.QueryRow(ctx, getHikeCard, id)
+	var i GetHikeCardRow
 	err := row.Scan(
 		&i.ID,
 		&i.TitleRu,
-		&i.DescriptionRu,
 		&i.StartsAt,
 		&i.EndsAt,
+		&i.PriceGel,
+		&i.DistanceKm,
+		&i.ElevationGainM,
+		&i.PreviewRu,
+		&i.ImagePath,
 	)
+	return i, err
+}
+
+const getHikeDetails = `-- name: GetHikeDetails :one
+SELECT 
+    id, 
+    title_ru,
+    description_ru
+FROM hikes
+WHERE id = $1 AND is_published = true
+`
+
+type GetHikeDetailsRow struct {
+	ID            int32  `db:"id" json:"id"`
+	TitleRu       string `db:"title_ru" json:"title_ru"`
+	DescriptionRu string `db:"description_ru" json:"description_ru"`
+}
+
+func (q *Queries) GetHikeDetails(ctx context.Context, id int32) (GetHikeDetailsRow, error) {
+	row := q.db.QueryRow(ctx, getHikeDetails, id)
+	var i GetHikeDetailsRow
+	err := row.Scan(&i.ID, &i.TitleRu, &i.DescriptionRu)
 	return i, err
 }
 
@@ -132,10 +166,8 @@ const listActualHikes = `-- name: ListActualHikes :many
 SELECT 
     id, 
     title_ru, 
-    preview_ru,
     starts_at, 
     ends_at, 
-    image_path,
     price_gel,
     distance_km,
     elevation_gain_m
@@ -153,10 +185,8 @@ type ListActualHikesParams struct {
 type ListActualHikesRow struct {
 	ID             int32          `db:"id" json:"id"`
 	TitleRu        string         `db:"title_ru" json:"title_ru"`
-	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
 	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
 	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
-	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
 	PriceGel       int32          `db:"price_gel" json:"price_gel"`
 	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
 	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
@@ -174,10 +204,8 @@ func (q *Queries) ListActualHikes(ctx context.Context, arg ListActualHikesParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.TitleRu,
-			&i.PreviewRu,
 			&i.StartsAt,
 			&i.EndsAt,
-			&i.ImagePath,
 			&i.PriceGel,
 			&i.DistanceKm,
 			&i.ElevationGainM,

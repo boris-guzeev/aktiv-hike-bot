@@ -11,7 +11,7 @@ INSERT INTO hikes (
     description_en,
     starts_at, 
     ends_at, 
-    photo_file_id,
+    image_path,
     price_gel,
     distance_km,
     elevation_gain_m,

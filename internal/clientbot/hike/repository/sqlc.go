@@ -18,7 +18,7 @@ func New(q *client.Queries) service.Repository {
 	return &repository{queries: q}
 }
 
-func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) ([]service.Hike, error) {
+func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) ([]service.HikeListItem, error) {
 	rawHikes, err := r.queries.ListActualHikes(ctx, client.ListActualHikesParams{
 		Limit:  limit,
 		Offset: offset,
@@ -27,14 +27,8 @@ func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) (
 		return nil, logger.WrapError(err)
 	}
 
-	serviceHikes := make([]service.Hike, 0, len(rawHikes))
+	serviceHikes := make([]service.HikeListItem, 0, len(rawHikes))
 	for _, rawHike := range rawHikes {
-		var imagePath *string
-		if rawHike.ImagePath.Valid {
-			s := rawHike.ImagePath.String
-			imagePath = &s
-		}
-
 		var distance float64
 		if rawHike.DistanceKm.Valid {
 			result, err := rawHike.DistanceKm.Float64Value()
@@ -44,13 +38,11 @@ func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) (
 			distance = result.Float64
 		}
 
-		serviceHikes = append(serviceHikes, service.Hike{
+		serviceHikes = append(serviceHikes, service.HikeListItem{
 			ID:             rawHike.ID,
 			TitleRu:        rawHike.TitleRu,
-			PreviewRu:      rawHike.PreviewRu,
 			StartsAt:       rawHike.StartsAt,
 			EndsAt:         rawHike.EndsAt,
-			ImagePath:      imagePath,
 			PriceGel:       rawHike.PriceGel,
 			DistanceKm:     distance,
 			ElevationGainM: int(rawHike.ElevationGainM.Int32),
@@ -60,21 +52,60 @@ func (r *repository) ListActualHikes(ctx context.Context, limit, offset int32) (
 	return serviceHikes, nil
 }
 
-func (r *repository) GetHike(ctx context.Context, id int32) (service.Hike, error) {
-	hikeRaw, err := r.queries.GetHike(ctx, id)
+func (r *repository) GetHikeCard(ctx context.Context, id int32) (service.HikeCard, error) {
+	rawHike, err := r.queries.GetHikeCard(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return service.Hike{}, service.ErrHikesNotFound
+			return service.HikeCard{}, service.ErrHikesNotFound
 		}
-		return service.Hike{}, logger.WrapError(err)
+		return service.HikeCard{}, logger.WrapError(err)
 	}
-	hike := service.Hike{
-		ID:            hikeRaw.ID,
-		TitleRu:       hikeRaw.TitleRu,
-		DescriptionRu: hikeRaw.DescriptionRu,
-		StartsAt:      hikeRaw.StartsAt,
-		EndsAt:        hikeRaw.EndsAt,
+
+	var distance float64
+	if rawHike.DistanceKm.Valid {
+		v, err := rawHike.DistanceKm.Float64Value()
+		if err != nil {
+			return service.HikeCard{}, logger.WrapError(err)
+		}
+		distance = v.Float64
+	}
+
+	var elevationGainM int32
+	if rawHike.ElevationGainM.Valid {
+		elevationGainM = rawHike.ElevationGainM.Int32
+	}
+
+	var imagePath string
+	if rawHike.ImagePath.Valid {
+		imagePath = rawHike.ImagePath.String
+	}
+
+	hike := service.HikeCard{
+		ID:             rawHike.ID,
+		TitleRu:        rawHike.TitleRu,
+		StartsAt:       rawHike.StartsAt,
+		EndsAt:         rawHike.EndsAt,
+		PriceGel:       rawHike.PriceGel,
+		DistanceKm:     &distance,
+		ElevationGainM: &elevationGainM,
+		ImagePath:      &imagePath,
 	}
 
 	return hike, nil
+}
+
+func (r *repository) GetHikeDetails(ctx context.Context, id int32) (service.HikeDetails, error) {
+	rawHike, err := r.queries.GetHikeDetails(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return service.HikeDetails{}, service.ErrHikesNotFound
+		}
+		return service.HikeDetails{}, logger.WrapError(err)
+	}
+
+	return service.HikeDetails{
+		ID:            rawHike.ID,
+		TitleRu:       rawHike.TitleRu,
+		DescriptionRu: rawHike.DescriptionRu,
+	}, nil
 }

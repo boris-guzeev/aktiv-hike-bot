@@ -16,7 +16,7 @@ func ClientBookingMessage() string {
 		"Пожалуйста, ожидайте 😊"
 }
 
-func AdminBookingMessage(hike hikeService.Hike, bookingID int32, tgUserID int64, username, fullName, adminBot string) string {
+func AdminBookingMessage(hike hikeService.HikeCard, bookingID int32, tgUserID int64, username, fullName, adminBot string) string {
 	title := html.EscapeString(hike.TitleRu)
 	fullNameEsc := html.EscapeString(strings.TrimSpace(fullName))
 

@@ -2,10 +2,8 @@
 SELECT 
     id, 
     title_ru, 
-    preview_ru,
     starts_at, 
     ends_at, 
-    image_path,
     price_gel,
     distance_km,
     elevation_gain_m
@@ -14,13 +12,25 @@ WHERE is_published = true AND ends_at >= now()
 ORDER BY starts_at ASC
 LIMIT $1 OFFSET $2;
 
--- name: GetHike :one
+-- name: GetHikeCard :one
 SELECT 
     id, 
     title_ru, 
-    description_ru,
     starts_at, 
-    ends_at
+    ends_at, 
+    price_gel,
+    distance_km,
+    elevation_gain_m,
+    preview_ru,
+    image_path
+FROM hikes
+WHERE id = $1 AND is_published = true; 
+
+-- name: GetHikeDetails :one
+SELECT 
+    id, 
+    title_ru,
+    description_ru
 FROM hikes
 WHERE id = $1 AND is_published = true; 
 

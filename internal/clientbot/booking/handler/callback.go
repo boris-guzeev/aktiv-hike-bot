@@ -46,7 +46,7 @@ func (h *Handler) BookHike(ctx context.Context, q *tgbot.CallbackQuery) error {
 	}
 
 	// 2) Get Hike
-	hike, err := h.hikeService.GetHike(ctx, hikeID)
+	hike, err := h.hikeService.GetHikeCard(ctx, hikeID)
 	if err != nil {
 		if errors.Is(err, hikeService.ErrHikesNotFound) {
 			_ = h.replyCallback(q, "К сожалению, этот хайк недоступен.")

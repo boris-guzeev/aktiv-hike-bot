@@ -49,14 +49,21 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 
 func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 	switch m.Text {
-	case "🥾 Актуальные хайки":
-		return r.hikeHandler.ListActualHikes(ctx, m)
-
 	// case "🧾 Мои записи":
 	// 	// TODO позже
 
 	case "ℹ️ Помощь":
+		r.hikeHandler.ResetFSM(m.From.ID)
 		return r.showHelp(m.Chat.ID)
+	}
+
+	if r.hikeHandler.InProgressFSM(m.From.ID) {
+		return r.hikeHandler.HandleFSM(ctx, m)
+	}
+
+	switch m.Text {
+	case "🥾 Актуальные хайки":
+		return r.hikeHandler.ListActualHikes(ctx, m)
 	}
 
 	return r.showMainMenu(m.Chat.ID)

@@ -24,7 +24,7 @@ func (h *Handler) DetailsHike(ctx context.Context, q *tgbot.CallbackQuery) error
 		return logger.WrapError(err)
 	}
 
-	hike, err := h.service.GetHike(ctx, int32(id))
+	hike, err := h.service.GetHikeDetails(ctx, int32(id))
 	if err != nil {
 		return logger.WrapError(err)
 	}

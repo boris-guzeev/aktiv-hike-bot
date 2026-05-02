@@ -8,7 +8,7 @@ import (
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
 )
 
-func PreviewHikeActions(hike service.Hike) tgbot.InlineKeyboardMarkup {
+func PreviewHikeActions(hike service.HikeCard) tgbot.InlineKeyboardMarkup {
 	return tgbot.NewInlineKeyboardMarkup(
 		tgbot.NewInlineKeyboardRow(
 			tgbot.NewInlineKeyboardButtonData(
@@ -23,7 +23,7 @@ func PreviewHikeActions(hike service.Hike) tgbot.InlineKeyboardMarkup {
 	)
 }
 
-func DetailsHikeActions(hike service.Hike) tgbot.InlineKeyboardMarkup {
+func DetailsHikeActions(hike service.HikeDetails) tgbot.InlineKeyboardMarkup {
 	return tgbot.NewInlineKeyboardMarkup(
 		tgbot.NewInlineKeyboardRow(
 			tgbot.NewInlineKeyboardButtonData(
