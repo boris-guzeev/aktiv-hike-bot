@@ -100,11 +100,6 @@ func (r repository) DeleteHike(ctx context.Context, id int32) error {
 }
 
 func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, error) {
-	photoFileID := pgtype.Text{
-		String: hike.PhotoFileID,
-		Valid:  hike.PhotoFileID != "",
-	}
-
 	distanceKm := pgtype.Numeric{}
 	if hike.DistanceKm != 0 {
 		if err := distanceKm.Scan(fmt.Sprintf("%.2f", hike.DistanceKm)); err != nil {
@@ -123,7 +118,6 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 		DescriptionRu:  hike.DescriptionRu,
 		StartsAt:       hike.StartsAt,
 		EndsAt:         hike.EndsAt,
-		PhotoFileID:    photoFileID,
 		PriceGel:       hike.PriceGel,
 		DistanceKm:     distanceKm,
 		ElevationGainM: elevationGainM,
