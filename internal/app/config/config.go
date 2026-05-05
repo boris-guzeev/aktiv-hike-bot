@@ -1,7 +1,6 @@
 package config
 
 import (
-	"database/sql"
 	"log"
 	"os"
 	"strconv"
@@ -66,16 +65,4 @@ func mustParseInt64(s string) int64 {
 		log.Fatalf("bad int64: %v", err)
 	}
 	return int64(i)
-}
-
-// TODO: помоему плохая идея в конфигах делать инициализацию объекта БД
-func MustOpenDB(url string) *sql.DB {
-	db, err := sql.Open("postgres", url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-	return db
 }
