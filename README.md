@@ -29,7 +29,7 @@ cmd/
 internal/
  ├── adminbot/
  ├── clientbot/
- ├── app/
+ ├── config/
  ├── db/
  └── logger/
  ```
