@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/booking/handler"

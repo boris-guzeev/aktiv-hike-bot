@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/seeds"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
 	"github.com/jackc/pgx/v5"

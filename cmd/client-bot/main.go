@@ -5,6 +5,7 @@ import (
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
 	sqlc "github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/client"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"

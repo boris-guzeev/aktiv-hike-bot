@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	adminService "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/admin/service"
