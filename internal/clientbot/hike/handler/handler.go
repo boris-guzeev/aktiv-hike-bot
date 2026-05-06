@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/app/config"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/fsm"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
