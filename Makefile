@@ -4,7 +4,7 @@ export
 seeds:
 	docker run --rm \
 	--network=aktiv-hike-bot_app_net \
-	-e DB_DSN=$(DB_DSN) \
+	-e DB_DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable \
 	-e TZ=$(TZ) \
 	-v $(PWD):/app \
 	-w /app \
