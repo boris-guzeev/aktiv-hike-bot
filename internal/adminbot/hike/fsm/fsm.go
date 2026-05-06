@@ -36,7 +36,7 @@ type FSM struct {
 	userSessions map[int64]*session
 }
 
-func NewFSM() *FSM {
+func New() *FSM {
 	return &FSM{
 		userSessions: make(map[int64]*session),
 	}

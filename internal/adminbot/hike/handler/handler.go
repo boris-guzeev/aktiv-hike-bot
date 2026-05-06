@@ -17,10 +17,10 @@ type HikeHandler struct {
 	loc         *time.Location
 }
 
-func New(b *tgbot.BotAPI, s service.Service, sroot string, l *time.Location) *HikeHandler {
+func New(b *tgbot.BotAPI, fsm *fsm.FSM, s service.Service, sroot string, l *time.Location) *HikeHandler {
 	return &HikeHandler{
 		bot:         b,
-		fsm:         fsm.NewFSM(),
+		fsm:         fsm,
 		service:     s,
 		storageRoot: sroot,
 		loc:         l,

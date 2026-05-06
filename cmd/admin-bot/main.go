@@ -12,6 +12,7 @@ import (
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
 	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
 	hikeRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/repository"
 	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
@@ -57,9 +58,10 @@ func main() {
 
 	// Init application dependencies
 	// --- Hike --- /
+	fsm := fsm.New()
 	hikeRep := hikeRepository.New(queries)
 	hikeSvc := hikeService.New(hikeRep)
-	hikeHnd := hikeHandler.New(bot, hikeSvc, cfg.StorageRoot, loc)
+	hikeHnd := hikeHandler.New(bot, fsm, hikeSvc, cfg.StorageRoot, loc)
 
 	// --- User --- /
 	userRepo := userRepository.New(queries)
