@@ -252,9 +252,7 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 		h.fsm.Set(m.From.ID, fsm.StateEditHikeTitleRU)
 
 		// Current TitleRu Notice
-		msg := tgbot.NewMessage(m.Chat.ID, "Текущее название RU одним сообщением:")
-		msg.ReplyMarkup = common.OnlyBackKeyboard()
-		_, err := h.bot.Send(msg)
+		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Текущее название RU одним сообщением:"))
 		if err != nil {
 			return logger.WrapError(err)
 		}
@@ -268,19 +266,17 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 		}
 
 		// New TitleRu Request
-		_, err = h.bot.Send(
-			tgbot.NewMessage(m.Chat.ID, "Введите новое название RU:"),
-		)
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите новое название RU:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
 
 	case hikeUI.ButtonEditPreviewRu:
 		h.fsm.Set(m.From.ID, fsm.StateEditHikePreviewRU)
 
 		// Current PreviewRu Notice
-		msg := tgbot.NewMessage(m.Chat.ID, "Текущее превью RU одним сообщением:")
-		msg.ReplyMarkup = common.OnlyBackKeyboard()
 		if len(strings.TrimSpace(hike.PreviewRu)) != 0 {
-			_, err := h.bot.Send(msg)
+			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Текущее превью RU одним сообщением:"))
 			if err != nil {
 				return logger.WrapError(err)
 			}
@@ -293,20 +289,20 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 				return logger.WrapError(err)
 			}
 		}
+
 		// New PreviewRu Request
-		_, err = h.bot.Send(
-			tgbot.NewMessage(m.Chat.ID, "Введите новое превью RU:"),
-		)
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите новое превью RU:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+
+		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
 
 	case hikeUI.ButtonEditDescriptionRu:
 		h.fsm.Set(m.From.ID, fsm.StateEditHikeDescriptionRU)
 
 		// Current DescriptionRu Notice
-		msg := tgbot.NewMessage(m.Chat.ID, "Текущее описание RU одним сообщением:")
-		msg.ReplyMarkup = common.OnlyBackKeyboard()
 		if len(strings.TrimSpace(hike.DescriptionRu)) != 0 {
-			_, err := h.bot.Send(msg)
+			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Текущее описание RU одним сообщением:"))
 			if err != nil {
 				return logger.WrapError(err)
 			}
@@ -319,10 +315,11 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 				return logger.WrapError(err)
 			}
 		}
+
 		// New DescriptionRu Request
-		_, err = h.bot.Send(
-			tgbot.NewMessage(m.Chat.ID, "Введите новое описание RU:"),
-		)
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите новое описание RU:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
 
 	case common.ButtonBack:
