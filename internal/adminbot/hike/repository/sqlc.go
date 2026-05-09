@@ -26,6 +26,7 @@ func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error)
 	return service.Hike{
 		ID:            rawHike.ID,
 		TitleRu:       rawHike.TitleRu,
+		PreviewRu:     rawHike.PreviewRu,
 		DescriptionRu: rawHike.DescriptionRu,
 		StartsAt:      rawHike.StartsAt,
 		EndsAt:        rawHike.EndsAt,
