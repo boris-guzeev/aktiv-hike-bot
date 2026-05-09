@@ -355,73 +355,18 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 	return i, err
 }
 
-const updateHike = `-- name: UpdateHike :one
-UPDATE hikes SET
-    title_ru       = $2,
-    title_en       = $3,
-    description_ru = $4,
-    description_en = $5,
-    starts_at      = $6,
-    ends_at        = $7,
-    photo_file_id  = $8,
-    is_published   = $9,
-    distance_km    = $10,
-    elevation_gain_m = $11,
-    updated_at       = $12
-WHERE id = $1
-RETURNING id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km, preview_ru
+const updateDescriptionRu = `-- name: UpdateDescriptionRu :exec
+UPDATE hikes SET description_ru = $2 WHERE id = $1
 `
 
-type UpdateHikeParams struct {
-	ID             int32          `db:"id" json:"id"`
-	TitleRu        string         `db:"title_ru" json:"title_ru"`
-	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
-	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
-	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
-	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
-	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
-	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
-	IsPublished    bool           `db:"is_published" json:"is_published"`
-	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
-	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
-	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
+type UpdateDescriptionRuParams struct {
+	ID            int32  `db:"id" json:"id"`
+	DescriptionRu string `db:"description_ru" json:"description_ru"`
 }
 
-func (q *Queries) UpdateHike(ctx context.Context, arg UpdateHikeParams) (Hike, error) {
-	row := q.db.QueryRow(ctx, updateHike,
-		arg.ID,
-		arg.TitleRu,
-		arg.TitleEn,
-		arg.DescriptionRu,
-		arg.DescriptionEn,
-		arg.StartsAt,
-		arg.EndsAt,
-		arg.PhotoFileID,
-		arg.IsPublished,
-		arg.DistanceKm,
-		arg.ElevationGainM,
-		arg.UpdatedAt,
-	)
-	var i Hike
-	err := row.Scan(
-		&i.ID,
-		&i.TitleRu,
-		&i.TitleEn,
-		&i.DescriptionRu,
-		&i.DescriptionEn,
-		&i.StartsAt,
-		&i.EndsAt,
-		&i.PhotoFileID,
-		&i.IsPublished,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ImagePath,
-		&i.PriceGel,
-		&i.ElevationGainM,
-		&i.DistanceKm,
-		&i.PreviewRu,
-	)
-	return i, err
+func (q *Queries) UpdateDescriptionRu(ctx context.Context, arg UpdateDescriptionRuParams) error {
+	_, err := q.db.Exec(ctx, updateDescriptionRu, arg.ID, arg.DescriptionRu)
+	return err
 }
 
 const updateImagePath = `-- name: UpdateImagePath :exec
@@ -435,6 +380,34 @@ type UpdateImagePathParams struct {
 
 func (q *Queries) UpdateImagePath(ctx context.Context, arg UpdateImagePathParams) error {
 	_, err := q.db.Exec(ctx, updateImagePath, arg.ID, arg.ImagePath)
+	return err
+}
+
+const updatePreviewRu = `-- name: UpdatePreviewRu :exec
+UPDATE hikes SET preview_ru = $2 WHERE id = $1
+`
+
+type UpdatePreviewRuParams struct {
+	ID        int32  `db:"id" json:"id"`
+	PreviewRu string `db:"preview_ru" json:"preview_ru"`
+}
+
+func (q *Queries) UpdatePreviewRu(ctx context.Context, arg UpdatePreviewRuParams) error {
+	_, err := q.db.Exec(ctx, updatePreviewRu, arg.ID, arg.PreviewRu)
+	return err
+}
+
+const updateTitleRu = `-- name: UpdateTitleRu :exec
+UPDATE hikes SET title_ru = $2 WHERE id = $1
+`
+
+type UpdateTitleRuParams struct {
+	ID      int32  `db:"id" json:"id"`
+	TitleRu string `db:"title_ru" json:"title_ru"`
+}
+
+func (q *Queries) UpdateTitleRu(ctx context.Context, arg UpdateTitleRuParams) error {
+	_, err := q.db.Exec(ctx, updateTitleRu, arg.ID, arg.TitleRu)
 	return err
 }
 

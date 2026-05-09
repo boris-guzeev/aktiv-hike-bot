@@ -13,3 +13,11 @@ func MainMenu() tgbot.ReplyKeyboardMarkup {
 		),
 	)
 }
+
+func OnlyBackKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("⬅️ Назад"),
+		),
+	)
+}

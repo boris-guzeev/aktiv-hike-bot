@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/parser"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
 	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -46,7 +48,10 @@ func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 		return h.HandleSelectHike(ctx, m)
 
 	case fsm.StateSelectedHikeAction, fsm.StateConfirmPublishHike, fsm.StateConfirmHideHike:
-		return h.HandlePublishHike(ctx, m)
+		return h.HandleSelectedHike(ctx, m)
+
+	case fsm.StateViewDetailsHike, fsm.StateEditHikeTitleRU, fsm.StateEditHikePreviewRU, fsm.StateEditHikeDescriptionRU:
+		return h.HandleHikeDetailsFlow(ctx, m)
 
 	default:
 		h.fsm.Reset(m.From.ID)
@@ -109,7 +114,7 @@ func (h *HikeHandler) HandleSelectHike(ctx context.Context, m *tgbot.Message) er
 	return err
 }
 
-func (h *HikeHandler) HandlePublishHike(ctx context.Context, m *tgbot.Message) error {
+func (h *HikeHandler) HandleSelectedHike(ctx context.Context, m *tgbot.Message) error {
 	txt := strings.TrimSpace(m.Text)
 
 	switch h.fsm.State(m.From.ID) {
@@ -154,7 +159,7 @@ func (h *HikeHandler) HandlePublishHike(ctx context.Context, m *tgbot.Message) e
 			return err
 
 		case "🧾 Карточка хайка":
-			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Карточка хайка пока в разработке."))
+			err := h.showHikeDetails(ctx, m)
 			return err
 
 		case "⬅️ Назад":
@@ -206,6 +211,291 @@ func (h *HikeHandler) HandlePublishHike(ctx context.Context, m *tgbot.Message) e
 	h.fsm.Reset(m.From.ID)
 	_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Неизвестное состояние. Сбросил сценарий."))
 	return err
+}
+
+func (h *HikeHandler) HandleHikeDetailsFlow(ctx context.Context, m *tgbot.Message) error {
+	switch h.fsm.State(m.From.ID) {
+	case fsm.StateViewDetailsHike:
+		return h.handleHikeDetailsActions(ctx, m)
+
+	case fsm.StateEditHikeTitleRU:
+		return h.handleEditTitleRu(ctx, m)
+
+	case fsm.StateEditHikePreviewRU:
+		return h.handleEditPreviewRu(ctx, m)
+
+	case fsm.StateEditHikeDescriptionRU:
+		return h.handleEditDescriptionRu(ctx, m)
+	}
+
+	h.fsm.Reset(m.From.ID)
+	_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Неизвестное состояние. Сценарий сброшен."))
+	return err
+}
+
+func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Message) error {
+	data := h.fsm.Data(m.From.ID)
+	strID := data["selected_hike_id"]
+	hikeID64, err := strconv.ParseInt(strID, 10, 32)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+	hikeID := int32(hikeID64)
+
+	hike, err := h.service.GetHike(ctx, hikeID)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	switch m.Text {
+	case hikeUI.ButtonEditTitleRu:
+		h.fsm.Set(m.From.ID, fsm.StateEditHikeTitleRU)
+
+		// Current TitleRu Notice
+		msg := tgbot.NewMessage(m.Chat.ID, "Текущее название RU одним сообщением:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err := h.bot.Send(msg)
+		if err != nil {
+			return logger.WrapError(err)
+		}
+
+		// Current TitleRu Message
+		_, err = h.bot.Send(
+			tgbot.NewMessage(m.Chat.ID, hike.TitleRu),
+		)
+		if err != nil {
+			return logger.WrapError(err)
+		}
+
+		// New TitleRu Request
+		_, err = h.bot.Send(
+			tgbot.NewMessage(m.Chat.ID, "Введите новое название RU:"),
+		)
+		return logger.WrapError(err)
+
+	case hikeUI.ButtonEditPreviewRu:
+		h.fsm.Set(m.From.ID, fsm.StateEditHikePreviewRU)
+
+		// Current PreviewRu Notice
+		msg := tgbot.NewMessage(m.Chat.ID, "Текущее превью RU одним сообщением:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		if len(strings.TrimSpace(hike.PreviewRu)) != 0 {
+			_, err := h.bot.Send(msg)
+			if err != nil {
+				return logger.WrapError(err)
+			}
+
+			// Current PreviewRu Message
+			_, err = h.bot.Send(
+				tgbot.NewMessage(m.Chat.ID, hike.PreviewRu),
+			)
+			if err != nil {
+				return logger.WrapError(err)
+			}
+		}
+		// New PreviewRu Request
+		_, err = h.bot.Send(
+			tgbot.NewMessage(m.Chat.ID, "Введите новое превью RU:"),
+		)
+		return logger.WrapError(err)
+
+	case hikeUI.ButtonEditDescriptionRu:
+		h.fsm.Set(m.From.ID, fsm.StateEditHikeDescriptionRU)
+
+		// Current DescriptionRu Notice
+		msg := tgbot.NewMessage(m.Chat.ID, "Текущее описание RU одним сообщением:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		if len(strings.TrimSpace(hike.DescriptionRu)) != 0 {
+			_, err := h.bot.Send(msg)
+			if err != nil {
+				return logger.WrapError(err)
+			}
+
+			// Current DescriptionRu Message
+			_, err = h.bot.Send(
+				tgbot.NewMessage(m.Chat.ID, hike.DescriptionRu),
+			)
+			if err != nil {
+				return logger.WrapError(err)
+			}
+		}
+		// New DescriptionRu Request
+		_, err = h.bot.Send(
+			tgbot.NewMessage(m.Chat.ID, "Введите новое описание RU:"),
+		)
+		return logger.WrapError(err)
+
+	case common.ButtonBack:
+		h.fsm.Set(m.From.ID, fsm.StateSelectedHikeAction)
+
+		msg := tgbot.NewMessage(m.Chat.ID, "Выберите действие")
+		data := h.fsm.Data(m.From.ID)
+		isPublished, _ := strconv.ParseBool(data["selected_hike_is_published"])
+		msg.ReplyMarkup = hikeUI.SelectedHikeActionsKeyboard(isPublished)
+
+		_, err := h.bot.Send(msg)
+		return logger.WrapError(err)
+	}
+
+	return nil
+}
+
+func (h *HikeHandler) handleEditTitleRu(ctx context.Context, m *tgbot.Message) error {
+	title := strings.TrimSpace(m.Text)
+	if title == "" {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Название не может быть пустым."))
+		return nil
+	}
+
+	data := h.fsm.Data(m.From.ID)
+
+	hikeID, err := strconv.Atoi(data["selected_hike_id"])
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdateTitleRu(ctx, int32(hikeID), title); err != nil {
+		return err
+	}
+
+	h.fsm.Put(m.From.ID, "selected_hike_title", title)
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Название обновлено ✅"))
+	if err != nil {
+		return err
+	}
+
+	return h.showHikeDetails(ctx, m)
+}
+
+func (h *HikeHandler) handleEditPreviewRu(ctx context.Context, m *tgbot.Message) error {
+	preview := strings.TrimSpace(m.Text)
+	if preview == "" {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Превью не может быть пустым."))
+		return nil
+	}
+
+	data := h.fsm.Data(m.From.ID)
+
+	hikeID, err := strconv.Atoi(data["selected_hike_id"])
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdatePreviewRu(ctx, int32(hikeID), preview); err != nil {
+		return err
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Превью обновлено ✅"))
+	if err != nil {
+		return err
+	}
+
+	return h.showHikeDetails(ctx, m)
+}
+
+func (h *HikeHandler) handleEditDescriptionRu(ctx context.Context, m *tgbot.Message) error {
+	description := strings.TrimSpace(m.Text)
+	if description == "" {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Описание не может быть пустым."))
+		return nil
+	}
+
+	data := h.fsm.Data(m.From.ID)
+
+	hikeID, err := strconv.Atoi(data["selected_hike_id"])
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdateDescriptionRu(ctx, int32(hikeID), description); err != nil {
+		return err
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Описание обновлено ✅"))
+	if err != nil {
+		return err
+	}
+
+	return h.showHikeDetails(ctx, m)
+}
+
+func (h *HikeHandler) showHikeDetails(ctx context.Context, m *tgbot.Message) error {
+	data := h.fsm.Data(m.From.ID)
+
+	strID := data["selected_hike_id"]
+	id, err := strconv.ParseInt(strID, 10, 32)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	hike, err := h.service.GetHike(ctx, int32(id))
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	card := buildHikeDetailsMessage(hike)
+
+	msg := tgbot.NewMessage(m.Chat.ID, card)
+	msg.ParseMode = tgbot.ModeHTML
+	msg.ReplyMarkup = hikeUI.HikeDetailsKeyboard()
+
+	if _, err := h.bot.Send(msg); err != nil {
+		return logger.WrapError(err)
+	}
+
+	return nil
+}
+
+func buildHikeDetailsMessage(hike service.Hike) string {
+	var b strings.Builder
+
+	b.WriteString("<b>🧾 Карточка хайка</b>\n\n")
+	b.WriteString(fmt.Sprintf("<b>ID:</b> %d\n", hike.ID))
+	b.WriteString(fmt.Sprintf("<b>Название:</b> %s\n", html.EscapeString(hike.TitleRu)))
+	b.WriteString(
+		fmt.Sprintf(
+			"<b>Опубликован:</b> %s\n", map[bool]string{
+				true:  "да",
+				false: "нет",
+			}[hike.IsPublished],
+		),
+	)
+	b.WriteString(fmt.Sprintf("<b>Дата начала:</b> %s\n", common.Format(hike.StartsAt)))
+	b.WriteString(fmt.Sprintf("<b>Дата окончания:</b> %s\n", common.Format(hike.EndsAt)))
+
+	if hike.PriceGel != 0 {
+		b.WriteString(fmt.Sprintf("<b>Цена:</b> %d GEL\n", hike.PriceGel))
+	}
+
+	if hike.DistanceKm != 0 {
+		b.WriteString(fmt.Sprintf("<b>Длина:</b> %.2f км\n", hike.DistanceKm))
+	}
+
+	if hike.ElevationGainM != 0 {
+		b.WriteString(fmt.Sprintf("<b>Набор высоты:</b> %d м\n", hike.ElevationGainM))
+	}
+
+	if strings.TrimSpace(hike.PreviewRu) == "" {
+		b.WriteString("<b>Превью:</b> —\n")
+	} else {
+		b.WriteString("<b>Превью:</b> заполнено\n")
+	}
+
+	if strings.TrimSpace(hike.DescriptionRu) == "" {
+		b.WriteString("<b>Описание RU:</b> —\n")
+	} else {
+		b.WriteString("<b>Описание RU:</b> заполнено\n")
+	}
+
+	return b.String()
 }
 
 func (h *HikeHandler) confirmPublishHike(ctx context.Context, m *tgbot.Message) error {

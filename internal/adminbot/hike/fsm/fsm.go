@@ -24,6 +24,11 @@ const (
 	StateSelectedHikeAction State = "selected_hike_action"
 	StateConfirmPublishHike State = "confirm_publish_hike"
 	StateConfirmHideHike    State = "confirm_hide_hike"
+
+	StateViewDetailsHike       State = "view_details_hike"
+	StateEditHikeTitleRU       State = "edit_hike_title_ru"
+	StateEditHikePreviewRU     State = "edit_hike_preview_ru"
+	StateEditHikeDescriptionRU State = "edit_hike_description_ru"
 )
 
 type session struct {

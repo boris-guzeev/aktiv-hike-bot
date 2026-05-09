@@ -25,8 +25,13 @@ type Repository interface {
 	ListHikes(ctx context.Context, limit, offset int32) ([]Hike, error)
 	ListActualHikes(ctx context.Context, limit, offset int32) ([]Hike, error)
 	PublishHike(ctx context.Context, id int32) error
+
 	CreateHike(ctx context.Context, hike Hike) (int32, error)
+	UpdateTitleRu(ctx context.Context, hikeID int32, title string) error
+	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
+	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
+
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
 }
@@ -36,8 +41,13 @@ type Service interface {
 	ListHikes(ctx context.Context, page, size int32) ([]Hike, error)
 	ListActualHikes(ctx context.Context, page, size int32) ([]Hike, error)
 	PublishHike(ctx context.Context, id int32) error
+
 	CreateHike(ctx context.Context, hike Hike) (int32, error)
+	UpdateTitleRu(ctx context.Context, hikeID int32, title string) error
+	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
+	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
+
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
 }
@@ -70,6 +80,18 @@ func (s service) PublishHike(ctx context.Context, id int32) error {
 
 func (s service) CreateHike(ctx context.Context, hike Hike) (int32, error) {
 	return s.repo.CreateHike(ctx, hike)
+}
+
+func (s service) UpdateTitleRu(ctx context.Context, hikeID int32, title string) error {
+	return s.repo.UpdateTitleRu(ctx, hikeID, title)
+}
+
+func (s service) UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error {
+	return s.repo.UpdatePreviewRu(ctx, hikeID, preview)
+}
+
+func (s service) UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error {
+	return s.repo.UpdateDescriptionRu(ctx, hikeID, description)
 }
 
 func (s service) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {

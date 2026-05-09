@@ -19,21 +19,14 @@ INSERT INTO hikes (
 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 RETURNING id;
 
--- name: UpdateHike :one
-UPDATE hikes SET
-    title_ru       = $2,
-    title_en       = $3,
-    description_ru = $4,
-    description_en = $5,
-    starts_at      = $6,
-    ends_at        = $7,
-    photo_file_id  = $8,
-    is_published   = $9,
-    distance_km    = $10,
-    elevation_gain_m = $11,
-    updated_at       = $12
-WHERE id = $1
-RETURNING *;
+-- name: UpdateTitleRu :exec
+UPDATE hikes SET title_ru = $2 WHERE id = $1;
+
+-- name: UpdatePreviewRu :exec
+UPDATE hikes SET preview_ru = $2 WHERE id = $1;
+
+-- name: UpdateDescriptionRu :exec
+UPDATE hikes SET description_ru = $2 WHERE id = $1;
 
 -- name: UpdateImagePath :exec
 UPDATE hikes SET image_path = $2 WHERE id = $1;

@@ -4,9 +4,13 @@ import (
 	"context"
 	"strings"
 
+	bookingUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/booking"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
+	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
+
 	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/booking/handler"
 	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
-	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
+
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -44,8 +48,24 @@ func (r *router) Route(ctx context.Context, u tgbot.Update) error {
 	return nil
 }
 
+var hikeButtons = map[string]struct{}{
+	hikeUI.ButtonHikes:      {},
+	hikeUI.ButtonCreateHike: {},
+	hikeUI.ButtonListHikes:  {},
+
+	// hikeUI.ButtonEditTitleRu:       {},
+	// hikeUI.ButtonEditPreviewRu:     {},
+	// hikeUI.ButtonEditDescriptionRu: {},
+}
+
+var bookingButtons = map[string]struct{}{
+	bookingUI.ButtonBookings:    {},
+	bookingUI.ButtonBookingList: {},
+	bookingUI.ButtonBookingStat: {},
+}
+
 func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
-	if m.Text == "⬅️ Назад" {
+	if m.Text == common.ButtonBack {
 		r.hikeHandler.ResetFSM(m.From.ID)
 		return r.showMainMenu(m.Chat.ID)
 	}
@@ -54,14 +74,15 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 		return r.hikeHandler.HandleFSM(ctx, m)
 	}
 
-	switch m.Text {
-	case "🏔 Хайки", "➕ Создать хайк", "📋 Список хайков":
+	if _, ok := hikeButtons[m.Text]; ok {
 		return r.routeHikeMessage(ctx, m)
+	}
 
-	case "📥 Заявки", "📋 Список заявок", "📊 Статистика заявок":
+	if _, ok := bookingButtons[m.Text]; ok {
 		return r.routeBookingMessage(ctx, m)
+	}
 
-	case "❓ Помощь":
+	if m.Text == common.ButtonHelp {
 		return r.showHelp(m.Chat.ID)
 	}
 
@@ -70,12 +91,15 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 
 func (r *router) routeHikeMessage(ctx context.Context, m *tgbot.Message) error {
 	switch m.Text {
-	case "🏔 Хайки":
+	case hikeUI.ButtonHikes:
 		return r.hikeHandler.ShowMenu(ctx, m)
-	case "➕ Создать хайк":
+
+	case hikeUI.ButtonCreateHike:
 		return r.hikeHandler.StartCreateHike(ctx, m)
-	case "📋 Список хайков":
+
+	case hikeUI.ButtonListHikes:
 		return r.hikeHandler.ListHikes(ctx, m)
+
 	}
 
 	return r.showMainMenu(m.Chat.ID)
@@ -83,11 +107,11 @@ func (r *router) routeHikeMessage(ctx context.Context, m *tgbot.Message) error {
 
 func (r *router) routeBookingMessage(ctx context.Context, m *tgbot.Message) error {
 	switch m.Text {
-	case "📥 Заявки":
+	case bookingUI.ButtonBookings:
 		return r.bookingHandler.ShowMenu(ctx, m)
-	case "📋 Список заявок":
+	case bookingUI.ButtonBookingList:
 		return r.bookingHandler.ListBookings(ctx, m)
-	case "📊 Статистика заявок":
+	case bookingUI.ButtonBookingStat:
 		// TODO: return r.bookingHandler.Stat(ctx, m)
 		return nil
 	}

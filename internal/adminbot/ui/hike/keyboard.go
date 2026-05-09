@@ -61,6 +61,7 @@ func HideConfirmKeyboard() tgbot.ReplyKeyboardMarkup {
 	)
 }
 
+// TODO: заменить на common.OnlyBackKeyboard
 func CreateHikeKeyboard() tgbot.ReplyKeyboardMarkup {
 	return tgbot.NewReplyKeyboard(
 		tgbot.NewKeyboardButtonRow(
@@ -74,6 +75,23 @@ func HikeConfirmMenu() tgbot.ReplyKeyboardMarkup {
 		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("✅ Подтвердить"),
 			tgbot.NewKeyboardButton("❌ Отмена"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("⬅️ Назад"),
+		),
+	)
+}
+
+func HikeDetailsKeyboard() tgbot.ReplyKeyboardMarkup {
+	return tgbot.NewReplyKeyboard(
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✏️ Редактировать заголовок RU"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✏️ Редактировать превью RU"),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("✏️ Редактировать описание RU"),
 		),
 		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("⬅️ Назад"),

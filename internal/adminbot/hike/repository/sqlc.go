@@ -124,6 +124,30 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 	})
 }
 
+func (r repository) UpdateTitleRu(ctx context.Context, hikeID int32, title string) error {
+	err := r.queries.UpdateTitleRu(ctx, admin.UpdateTitleRuParams{
+		ID:      hikeID,
+		TitleRu: title,
+	})
+	return logger.WrapError(err)
+}
+
+func (r repository) UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error {
+	err := r.queries.UpdatePreviewRu(ctx, admin.UpdatePreviewRuParams{
+		ID:        hikeID,
+		PreviewRu: preview,
+	})
+	return logger.WrapError(err)
+}
+
+func (r repository) UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error {
+	err := r.queries.UpdateDescriptionRu(ctx, admin.UpdateDescriptionRuParams{
+		ID:            hikeID,
+		DescriptionRu: description,
+	})
+	return logger.WrapError(err)
+}
+
 func (r repository) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {
 	imagePathText := pgtype.Text{
 		String: imagePath,
