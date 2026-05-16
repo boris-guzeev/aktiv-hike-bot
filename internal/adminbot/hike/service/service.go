@@ -30,6 +30,7 @@ type Repository interface {
 	UpdateTitleRu(ctx context.Context, hikeID int32, title string) error
 	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
+	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 
 	HideHike(ctx context.Context, id int32) error
@@ -46,6 +47,7 @@ type Service interface {
 	UpdateTitleRu(ctx context.Context, hikeID int32, title string) error
 	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
+	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 
 	HideHike(ctx context.Context, id int32) error
@@ -92,6 +94,10 @@ func (s service) UpdatePreviewRu(ctx context.Context, hikeID int32, preview stri
 
 func (s service) UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error {
 	return s.repo.UpdateDescriptionRu(ctx, hikeID, description)
+}
+
+func (s service) UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error {
+	return s.repo.UpdateDates(ctx, hikeID, startsAt, endsAt)
 }
 
 func (s service) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {

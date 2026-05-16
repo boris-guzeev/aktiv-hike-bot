@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/db/sqlc/admin"
@@ -145,6 +146,15 @@ func (r repository) UpdateDescriptionRu(ctx context.Context, hikeID int32, descr
 	err := r.queries.UpdateDescriptionRu(ctx, admin.UpdateDescriptionRuParams{
 		ID:            hikeID,
 		DescriptionRu: description,
+	})
+	return logger.WrapError(err)
+}
+
+func (r repository) UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error {
+	err := r.queries.UpdateDates(ctx, admin.UpdateDatesParams{
+		ID:       hikeID,
+		StartsAt: startsAt,
+		EndsAt:   endsAt,
 	})
 	return logger.WrapError(err)
 }

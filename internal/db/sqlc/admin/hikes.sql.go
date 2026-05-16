@@ -355,6 +355,21 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 	return i, err
 }
 
+const updateDates = `-- name: UpdateDates :exec
+UPDATE hikes SET starts_at = $2, ends_at = $3 WHERE id = $1
+`
+
+type UpdateDatesParams struct {
+	ID       int32     `db:"id" json:"id"`
+	StartsAt time.Time `db:"starts_at" json:"starts_at"`
+	EndsAt   time.Time `db:"ends_at" json:"ends_at"`
+}
+
+func (q *Queries) UpdateDates(ctx context.Context, arg UpdateDatesParams) error {
+	_, err := q.db.Exec(ctx, updateDates, arg.ID, arg.StartsAt, arg.EndsAt)
+	return err
+}
+
 const updateDescriptionRu = `-- name: UpdateDescriptionRu :exec
 UPDATE hikes SET description_ru = $2 WHERE id = $1
 `

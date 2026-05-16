@@ -50,7 +50,11 @@ func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 	case fsm.StateSelectedHikeAction, fsm.StateConfirmPublishHike, fsm.StateConfirmHideHike:
 		return h.HandleSelectedHike(ctx, m)
 
-	case fsm.StateViewDetailsHike, fsm.StateEditHikeTitleRU, fsm.StateEditHikePreviewRU, fsm.StateEditHikeDescriptionRU:
+	case fsm.StateViewDetailsHike,
+		fsm.StateEditHikeTitleRU,
+		fsm.StateEditHikePreviewRU,
+		fsm.StateEditHikeDescriptionRU,
+		fsm.StateEditHikeDates:
 		return h.HandleHikeDetailsFlow(ctx, m)
 
 	default:
@@ -226,6 +230,9 @@ func (h *HikeHandler) HandleHikeDetailsFlow(ctx context.Context, m *tgbot.Messag
 
 	case fsm.StateEditHikeDescriptionRU:
 		return h.handleEditDescriptionRu(ctx, m)
+
+	case fsm.StateEditHikeDates:
+		return h.handleEditDates(ctx, m)
 	}
 
 	h.fsm.Reset(m.From.ID)
@@ -233,6 +240,12 @@ func (h *HikeHandler) HandleHikeDetailsFlow(ctx context.Context, m *tgbot.Messag
 	return err
 }
 
+// TODO: отрефакторить этот метод:
+// сделать метод router и методы обработки нажатия handles:
+// - handleEditTitleRuButton,
+// - handleEditPreviewRuButton
+// - handleEditDescriptionRuButton
+// - handleEditDatesButton
 func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Message) error {
 	data := h.fsm.Data(m.From.ID)
 	strID := data["selected_hike_id"]
@@ -318,6 +331,32 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 
 		// New DescriptionRu Request
 		msg := tgbot.NewMessage(m.Chat.ID, "Введите новое описание RU:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err = h.bot.Send(msg)
+		return logger.WrapError(err)
+
+	case hikeUI.ButtonEditDates:
+		h.fsm.Set(m.From.ID, fsm.StateEditHikeDates)
+
+		// Current Dates Notice
+		if !hike.StartsAt.IsZero() && !hike.EndsAt.IsZero() {
+			_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Текущие даты хайка одним сообщением:"))
+			if err != nil {
+				return logger.WrapError(err)
+			}
+
+			// Current Dates Message
+			datesStr := fmt.Sprintf("%s - %s", common.Format(hike.StartsAt), common.Format(hike.EndsAt))
+			_, err = h.bot.Send(
+				tgbot.NewMessage(m.Chat.ID, datesStr),
+			)
+			if err != nil {
+				return logger.WrapError(err)
+			}
+		}
+
+		// New Dates Request
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите новые даты:")
 		msg.ReplyMarkup = common.OnlyBackKeyboard()
 		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
@@ -415,6 +454,39 @@ func (h *HikeHandler) handleEditDescriptionRu(ctx context.Context, m *tgbot.Mess
 	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
 
 	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Описание обновлено ✅"))
+	if err != nil {
+		return err
+	}
+
+	return h.showHikeDetails(ctx, m)
+}
+
+func (h *HikeHandler) handleEditDates(ctx context.Context, m *tgbot.Message) error {
+	dates := strings.TrimSpace(m.Text)
+	if dates == "" {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Даты не могут быть пустыми."))
+		return nil
+	}
+
+	start, end, err := parser.ParseHikeDates(dates, time.Now().In(h.loc), h.loc)
+	if err != nil {
+		_ = h.sendCreateStep(m.Chat.ID, hikeUI.MessageParseDatesError)
+		return nil
+	}
+
+	data := h.fsm.Data(m.From.ID)
+	hikeID, err := strconv.Atoi(data["selected_hike_id"])
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdateDates(ctx, int32(hikeID), start, end); err != nil {
+		return err
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Даты обновлены ✅"))
 	if err != nil {
 		return err
 	}
@@ -689,7 +761,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 		loc := h.loc
 		start, end, err := parser.ParseHikeDates(m.Text, time.Now().In(loc), loc)
 		if err != nil {
-			_ = h.sendCreateStep(m.Chat.ID, "Не получилось распознать даты. Попробуйте ещё раз.\nПримеры: 10 · 10 12 · 10-12 · 31 3 · 03.02-04.02 · 15.12 16.12")
+			_ = h.sendCreateStep(m.Chat.ID, hikeUI.MessageParseDatesError)
 			return nil
 		}
 
