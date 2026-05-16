@@ -85,16 +85,19 @@ func HikeConfirmMenu() tgbot.ReplyKeyboardMarkup {
 func HikeDetailsKeyboard() tgbot.ReplyKeyboardMarkup {
 	return tgbot.NewReplyKeyboard(
 		tgbot.NewKeyboardButtonRow(
-			tgbot.NewKeyboardButton("✏️ Редактировать заголовок RU"),
+			tgbot.NewKeyboardButton(ButtonEditTitleRu),
 		),
 		tgbot.NewKeyboardButtonRow(
-			tgbot.NewKeyboardButton("✏️ Редактировать превью RU"),
+			tgbot.NewKeyboardButton(ButtonEditPreviewRu),
 		),
 		tgbot.NewKeyboardButtonRow(
-			tgbot.NewKeyboardButton("✏️ Редактировать описание RU"),
+			tgbot.NewKeyboardButton(ButtonEditDescriptionRu),
 		),
 		tgbot.NewKeyboardButtonRow(
-			tgbot.NewKeyboardButton("⬅️ Назад"),
+			tgbot.NewKeyboardButton(ButtonEditDates),
+		),
+		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton(ButtonBack),
 		),
 	)
 }
