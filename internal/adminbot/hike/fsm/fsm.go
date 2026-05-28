@@ -30,6 +30,7 @@ const (
 	StateEditHikePreviewRU     State = "edit_hike_preview_ru"
 	StateEditHikeDescriptionRU State = "edit_hike_description_ru"
 	StateEditHikeDates         State = "edit_hike_dates"
+	StateEditHikePriceGEL      State = "edit_hike_price_gel"
 )
 
 type session struct {

@@ -31,6 +31,9 @@ UPDATE hikes SET description_ru = $2 WHERE id = $1;
 -- name: UpdateDates :exec
 UPDATE hikes SET starts_at = $2, ends_at = $3 WHERE id = $1;
 
+-- name: UpdatePriceGel :exec
+UPDATE hikes SET price_gel = $2 WHERE id = $1;
+
 -- name: UpdateImagePath :exec
 UPDATE hikes SET image_path = $2 WHERE id = $1;
 

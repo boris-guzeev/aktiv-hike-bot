@@ -31,6 +31,7 @@ type Repository interface {
 	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
+	UpdatePriceGel(ctx context.Context, hikeID, price int32) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 
 	HideHike(ctx context.Context, id int32) error
@@ -48,6 +49,7 @@ type Service interface {
 	UpdatePreviewRu(ctx context.Context, hikeID int32, preview string) error
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
+	UpdatePriceGel(ctx context.Context, hikeID, price int32) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
 
 	HideHike(ctx context.Context, id int32) error
@@ -98,6 +100,10 @@ func (s service) UpdateDescriptionRu(ctx context.Context, hikeID int32, descript
 
 func (s service) UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error {
 	return s.repo.UpdateDates(ctx, hikeID, startsAt, endsAt)
+}
+
+func (s service) UpdatePriceGel(ctx context.Context, hikeID, price int32) error {
+	return s.repo.UpdatePriceGel(ctx, hikeID, price)
 }
 
 func (s service) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {

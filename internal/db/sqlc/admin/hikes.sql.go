@@ -412,6 +412,20 @@ func (q *Queries) UpdatePreviewRu(ctx context.Context, arg UpdatePreviewRuParams
 	return err
 }
 
+const updatePriceGel = `-- name: UpdatePriceGel :exec
+UPDATE hikes SET price_gel = $2 WHERE id = $1
+`
+
+type UpdatePriceGelParams struct {
+	ID       int32 `db:"id" json:"id"`
+	PriceGel int32 `db:"price_gel" json:"price_gel"`
+}
+
+func (q *Queries) UpdatePriceGel(ctx context.Context, arg UpdatePriceGelParams) error {
+	_, err := q.db.Exec(ctx, updatePriceGel, arg.ID, arg.PriceGel)
+	return err
+}
+
 const updateTitleRu = `-- name: UpdateTitleRu :exec
 UPDATE hikes SET title_ru = $2 WHERE id = $1
 `

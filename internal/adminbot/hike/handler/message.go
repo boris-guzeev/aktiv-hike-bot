@@ -54,7 +54,8 @@ func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 		fsm.StateEditHikeTitleRU,
 		fsm.StateEditHikePreviewRU,
 		fsm.StateEditHikeDescriptionRU,
-		fsm.StateEditHikeDates:
+		fsm.StateEditHikeDates,
+		fsm.StateEditHikePriceGEL:
 		return h.HandleHikeDetailsFlow(ctx, m)
 
 	default:
@@ -233,6 +234,9 @@ func (h *HikeHandler) HandleHikeDetailsFlow(ctx context.Context, m *tgbot.Messag
 
 	case fsm.StateEditHikeDates:
 		return h.handleEditDates(ctx, m)
+
+	case fsm.StateEditHikePriceGEL:
+		return h.handleEditPriceGel(ctx, m)
 	}
 
 	h.fsm.Reset(m.From.ID)
@@ -357,6 +361,15 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 
 		// New Dates Request
 		msg := tgbot.NewMessage(m.Chat.ID, "Введите новые даты:")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err = h.bot.Send(msg)
+		return logger.WrapError(err)
+
+	case hikeUI.ButtonEditPriceGel:
+		h.fsm.Set(m.From.ID, fsm.StateEditHikePriceGEL)
+
+		// New Price (GEL) Request
+		msg := tgbot.NewMessage(m.Chat.ID, "Введите новую цену (GEL):")
 		msg.ReplyMarkup = common.OnlyBackKeyboard()
 		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
@@ -494,6 +507,38 @@ func (h *HikeHandler) handleEditDates(ctx context.Context, m *tgbot.Message) err
 	return h.showHikeDetails(ctx, m)
 }
 
+func (h *HikeHandler) handleEditPriceGel(ctx context.Context, m *tgbot.Message) error {
+	priceStr := strings.TrimSpace(m.Text)
+	price, err := strconv.ParseInt(priceStr, 10, 32)
+	if err != nil {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Цена в лари должна быть числом."))
+		return logger.WrapError(err)
+	}
+	if price < 1 {
+		_, _ = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Цена в лари должна быть больше нуля."))
+		return nil
+	}
+
+	data := h.fsm.Data(m.From.ID)
+	hikeID, err := strconv.Atoi(data["selected_hike_id"])
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdatePriceGel(ctx, int32(hikeID), int32(price)); err != nil {
+		return err
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+
+	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Цена (GEL) обновлена ✅"))
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	return h.showHikeDetails(ctx, m)
+}
+
 func (h *HikeHandler) showHikeDetails(ctx context.Context, m *tgbot.Message) error {
 	data := h.fsm.Data(m.From.ID)
 
@@ -523,6 +568,7 @@ func (h *HikeHandler) showHikeDetails(ctx context.Context, m *tgbot.Message) err
 	return nil
 }
 
+// TODO: Вынести в UI
 func buildHikeDetailsMessage(hike service.Hike) string {
 	var b strings.Builder
 

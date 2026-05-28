@@ -32,6 +32,7 @@ func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error)
 		StartsAt:      rawHike.StartsAt,
 		EndsAt:        rawHike.EndsAt,
 		IsPublished:   rawHike.IsPublished,
+		PriceGel:      rawHike.PriceGel,
 	}, nil
 }
 
@@ -155,6 +156,14 @@ func (r repository) UpdateDates(ctx context.Context, hikeID int32, startsAt, end
 		ID:       hikeID,
 		StartsAt: startsAt,
 		EndsAt:   endsAt,
+	})
+	return logger.WrapError(err)
+}
+
+func (r repository) UpdatePriceGel(ctx context.Context, hikeID, price int32) error {
+	err := r.queries.UpdatePriceGel(ctx, admin.UpdatePriceGelParams{
+		ID:       hikeID,
+		PriceGel: price,
 	})
 	return logger.WrapError(err)
 }
