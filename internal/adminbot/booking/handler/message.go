@@ -57,7 +57,7 @@ func (h *BookingHandler) ListBookings(ctx context.Context, m *tgbot.Message) err
 	for _, booking := range bookings {
 		msg := tgbot.NewMessage(m.Chat.ID, bookingUI.AdminBookingCard(booking))
 		msg.ParseMode = "HTML"
-		msg.ReplyMarkup = bookingUI.AdminBookingActions(booking)
+		msg.ReplyMarkup = bookingUI.AdminBookingActions(booking.ID, booking.Status)
 
 		if _, err := h.bot.Send(msg); err != nil {
 			return fmt.Errorf("send booking message: %w", err)

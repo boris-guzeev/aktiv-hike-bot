@@ -7,24 +7,24 @@ import (
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func AdminBookingActions(b bookingService.Booking) tgbot.InlineKeyboardMarkup {
-	switch b.Status {
+func AdminBookingActions(bookingID int32, status bookingService.BookingStatus) tgbot.InlineKeyboardMarkup {
+	switch status {
 	case bookingService.StatusInProgress:
 		return tgbot.NewInlineKeyboardMarkup(
 			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData("✅ Подтвердить", fmt.Sprintf("booking:confirm:%d", b.ID)),
-				tgbot.NewInlineKeyboardButtonData("❌ Отменить", fmt.Sprintf("booking:cancel:%d", b.ID)),
+				tgbot.NewInlineKeyboardButtonData("✅ Подтвердить", fmt.Sprintf("booking:confirm:%d", bookingID)),
+				tgbot.NewInlineKeyboardButtonData("❌ Отменить", fmt.Sprintf("booking:cancel:%d", bookingID)),
 			),
 			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData("🏁 Завершить", fmt.Sprintf("booking:complete:%d", b.ID)),
+				tgbot.NewInlineKeyboardButtonData("🏁 Завершить", fmt.Sprintf("booking:complete:%d", bookingID)),
 			),
 		)
 
 	case bookingService.StatusConfirmed:
 		return tgbot.NewInlineKeyboardMarkup(
 			tgbot.NewInlineKeyboardRow(
-				tgbot.NewInlineKeyboardButtonData("🏁 Завершить", fmt.Sprintf("booking:complete:%d", b.ID)),
-				tgbot.NewInlineKeyboardButtonData("❌ Отменить", fmt.Sprintf("booking:cancel:%d", b.ID)),
+				tgbot.NewInlineKeyboardButtonData("🏁 Завершить", fmt.Sprintf("booking:complete:%d", bookingID)),
+				tgbot.NewInlineKeyboardButtonData("❌ Отменить", fmt.Sprintf("booking:cancel:%d", bookingID)),
 			),
 		)
 

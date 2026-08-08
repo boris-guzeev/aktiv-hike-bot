@@ -38,27 +38,20 @@ func (r *repository) GetByID(ctx context.Context, id int32) (service.Booking, er
 	}, nil
 }
 
-func (r *repository) UpdateStatus(ctx context.Context, id int32, newStatus service.BookingStatus) (service.Booking, error) {
-	rawBooking, err := r.queries.UpdateBookingStatus(ctx, admin.UpdateBookingStatusParams{
-		ID:        id,
-		NewStatus: string(newStatus),
+func (r *repository) UpdateStatus(ctx context.Context, id int32, newStatus service.BookingStatus) error {
+	affected, err := r.queries.UpdateBookingStatus(ctx, admin.UpdateBookingStatusParams{
+		Status:    string(newStatus),
+		BookingID: id,
 	})
 	if err != nil {
-		return service.Booking{}, logger.WrapError(err)
+		return logger.WrapError(err)
 	}
 
-	var takenByAdminID *int32
-	if rawBooking.TakenByAdminID.Valid {
-		takenByAdminID = &rawBooking.TakenByAdminID.Int32
+	if affected == 0 {
+		return logger.WrapError(service.ErrBookingNotUpdated)
 	}
 
-	return service.Booking{
-		ID:             rawBooking.ID,
-		HikeID:         rawBooking.HikeID,
-		UserID:         rawBooking.UserID,
-		Status:         service.BookingStatus(rawBooking.Status),
-		TakenByAdminID: takenByAdminID,
-	}, nil
+	return nil
 }
 
 func (r *repository) ListAdminBookings(ctx context.Context, adminID int32) ([]service.Booking, error) {

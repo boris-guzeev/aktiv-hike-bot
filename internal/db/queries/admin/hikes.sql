@@ -93,11 +93,39 @@ RETURNING id;
 SELECT id, hike_id, user_id, status, taken_by_admin_id
 FROM bookings WHERE id = $1;
 
--- name: UpdateBookingStatus :one
-UPDATE bookings
-SET status = sqlc.arg(new_status)
-WHERE id = $1
-RETURNING *;
+-- name: UpdateBookingStatus :execrows
+WITH updated_booking AS (
+    UPDATE bookings AS b
+    SET
+        status = sqlc.arg(status),
+        updated_at = NOW()
+    WHERE
+        b.id = sqlc.arg(booking_id)
+        AND b.status IS DISTINCT FROM sqlc.arg(status)
+    RETURNING b.id, b.hike_id, b.user_id, b.status
+)
+INSERT INTO notifications (
+    recipient_tg_user_id,
+    type,
+    entity_type,
+    entity_id,
+    payload
+)
+SELECT
+    u.tg_user_id,
+    'booking_status_changed',
+    'booking',
+    ub.id,
+    json_build_object(
+        'booking_id', ub.id,
+        'hike_title', h.title_ru,
+        'new_status', ub.status,
+        'distance_km', h.distance_km,
+        'elevation_gain_m', h.elevation_gain_m
+    )
+FROM updated_booking ub
+JOIN telegram_users u ON u.id = ub.user_id
+JOIN hikes h ON h.id = ub.hike_id;
 
 -- name: ListAdminBookings :many
 SELECT

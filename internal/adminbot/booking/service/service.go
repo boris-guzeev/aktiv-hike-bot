@@ -19,6 +19,7 @@ const (
 var (
 	ErrInvalidStatusTransition = errors.New("invalid status transition")
 	ErrNotYourBooking          = errors.New("not your booking")
+	ErrBookingNotUpdated       = errors.New("booking was not updated")
 )
 
 type Booking struct {
@@ -36,13 +37,13 @@ type Booking struct {
 
 type Repository interface {
 	GetByID(ctx context.Context, id int32) (Booking, error)
-	UpdateStatus(ctx context.Context, id int32, newStatus BookingStatus) (Booking, error)
+	UpdateStatus(ctx context.Context, id int32, newStatus BookingStatus) error
 	ListAdminBookings(ctx context.Context, adminID int32) ([]Booking, error)
 }
 
 type Service interface {
 	GetByID(ctx context.Context, id int32) (Booking, error)
-	UpdateStatus(ctx context.Context, id, adminID int32, newStatus BookingStatus) (Booking, error)
+	UpdateStatus(ctx context.Context, id, adminID int32, newStatus BookingStatus) error
 	ListAdminBookings(ctx context.Context, adminID int32) ([]Booking, error)
 }
 
@@ -58,18 +59,18 @@ func (s *service) GetByID(ctx context.Context, id int32) (Booking, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *service) UpdateStatus(ctx context.Context, id, adminID int32, newStatus BookingStatus) (Booking, error) {
+func (s *service) UpdateStatus(ctx context.Context, id, adminID int32, newStatus BookingStatus) error {
 	booking, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		return Booking{}, err
+		return err
 	}
 
 	if booking.TakenByAdminID == nil || *booking.TakenByAdminID != adminID {
-		return Booking{}, ErrNotYourBooking
+		return ErrNotYourBooking
 	}
 
 	if !canTransition(booking.Status, newStatus) {
-		return Booking{}, ErrInvalidStatusTransition
+		return ErrInvalidStatusTransition
 	}
 
 	return s.repo.UpdateStatus(ctx, id, newStatus)
