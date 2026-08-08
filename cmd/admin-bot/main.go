@@ -78,6 +78,8 @@ func main() {
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30
 
+	log.Info("admin-bot started...")
+
 	updates := bot.GetUpdatesChan(u)
 	for upd := range updates {
 		if err := r.Route(ctx, upd); err != nil {
