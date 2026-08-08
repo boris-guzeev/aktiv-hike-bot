@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os/signal"
+	"syscall"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/config"
@@ -9,6 +11,9 @@ import (
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/logger"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	notificationRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/notification/repository"
+	notificationWorker "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/notification/worker"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/fsm"
 	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/handler"
@@ -31,7 +36,12 @@ func main() {
 	log := logger.InitLogger()
 
 	// Init Context
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer stop()
 
 	// Get Config
 	cfg := config.MustLoadClientBot()
@@ -74,17 +84,33 @@ func main() {
 	bookHnd := bookingHandler.New(bot, cfg, userSrv, adminSrv, hikeSrv, bookSrv)
 
 	// Init Router
-	r := clientbot.NewRouter(bot, cfg, hikeHnd, bookHnd)
+	router := clientbot.NewRouter(bot, cfg, hikeHnd, bookHnd)
+
+	// Init Notification Worker
+	workerRepo := notificationRepository.New(log, queries)
+	worker := notificationWorker.New(log, bot, workerRepo)
+	go worker.Run(ctx)
 
 	// Bot updates
-	u := tgbot.NewUpdate(0)
-	u.Timeout = 30
-	updates := bot.GetUpdatesChan(u)
+	updateConfig := tgbot.NewUpdate(0)
+	updateConfig.Timeout = 30
+	updates := bot.GetUpdatesChan(updateConfig)
 	defer bot.StopReceivingUpdates()
 
-	for upd := range updates {
-		if err := r.Route(ctx, upd); err != nil {
-			log.StructuredError("bot error", err)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("client bot shutting down")
+			return
+
+		case update, ok := <-updates:
+			if !ok {
+				log.Info("telegram updates channel closed")
+				return
+			}
+			if err := router.Route(ctx, update); err != nil {
+				log.StructuredError("bot route error", err)
+			}
 		}
 	}
 }

@@ -46,6 +46,23 @@ type Hike struct {
 	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
 }
 
+type Notification struct {
+	ID                int64              `db:"id" json:"id"`
+	RecipientTgUserID int64              `db:"recipient_tg_user_id" json:"recipient_tg_user_id"`
+	Type              string             `db:"type" json:"type"`
+	EntityType        pgtype.Text        `db:"entity_type" json:"entity_type"`
+	EntityID          pgtype.Int8        `db:"entity_id" json:"entity_id"`
+	Payload           []byte             `db:"payload" json:"payload"`
+	Status            string             `db:"status" json:"status"`
+	Attempts          int32              `db:"attempts" json:"attempts"`
+	LastError         pgtype.Text        `db:"last_error" json:"last_error"`
+	LastAttemptAt     pgtype.Timestamptz `db:"last_attempt_at" json:"last_attempt_at"`
+	NextRetryAt       pgtype.Timestamptz `db:"next_retry_at" json:"next_retry_at"`
+	CreatedAt         time.Time          `db:"created_at" json:"created_at"`
+	SentAt            pgtype.Timestamptz `db:"sent_at" json:"sent_at"`
+	FailedAt          pgtype.Timestamptz `db:"failed_at" json:"failed_at"`
+}
+
 type Payment struct {
 	ID          int32          `db:"id" json:"id"`
 	BookingID   int32          `db:"booking_id" json:"booking_id"`
