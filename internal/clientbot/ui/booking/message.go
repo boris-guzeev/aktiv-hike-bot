@@ -50,13 +50,15 @@ func AdminBookingMessage(hike hikeService.HikeCard, bookingID int32, tgUserID in
 			"Админ-бот: %s\n\n"+
 			"Данные клиента\n"+
 			"🔗 Username: %s\n"+
-			"👤 Пользователь: %s\n",
+			"👤 Пользователь: %s\n"+
+			"🆔 Telegram ID: %d\n",
 		bookingID,
 		title,
 		dateRange,
 		adminBot,
 		userLink,
 		unameLine,
+		tgUserID,
 	)
 }
 

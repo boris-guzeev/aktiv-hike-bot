@@ -9,26 +9,38 @@ import (
 
 	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/booking/handler"
 	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/hike/handler"
+	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/relay"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/clientbot/ui/common"
 )
 
 type router struct {
-	bot         *tgbot.BotAPI
-	cfg         config.ClientBot
-	hikeHandler *hikeHandler.Handler
-	bookHandler *bookingHandler.Handler
+	bot          *tgbot.BotAPI
+	cfg          config.ClientBot
+	hikeHandler  *hikeHandler.Handler
+	bookHandler  *bookingHandler.Handler
+	relayHandler *relay.Handler
 }
 
 func NewRouter(b *tgbot.BotAPI, c config.ClientBot, hH *hikeHandler.Handler, bH *bookingHandler.Handler) *router {
 	return &router{
-		bot:         b,
-		cfg:         c,
-		hikeHandler: hH,
-		bookHandler: bH,
+		bot:          b,
+		cfg:          c,
+		hikeHandler:  hH,
+		bookHandler:  bH,
+		relayHandler: relay.New(b, c),
 	}
 }
 
 func (r *router) Route(ctx context.Context, u tgbot.Update) error {
+	// Replies in the admin group are routed to the client encoded in the
+	// replied-to message. The Telegram message itself is the only state.
+	if m := u.Message; m != nil && m.Chat.ID == r.cfg.AdminChatID {
+		handled, err := r.relayHandler.HandleAdminReply(m)
+		if handled || err != nil {
+			return err
+		}
+	}
+
 	// Private messages -> client flow
 	if m := u.Message; m != nil && m.Chat.IsPrivate() {
 		return r.routeMessage(ctx, m)
@@ -62,6 +74,16 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 
 	if r.hikeHandler.InProgressFSM(m.From.ID) {
 		return r.hikeHandler.HandleFSM(ctx, m)
+	}
+
+	// Commands are bot controls, not messages for managers.
+	if strings.HasPrefix(m.Text, "/") {
+		return r.showMainMenu(m.Chat.ID)
+	}
+
+	handled, err := r.relayHandler.HandleClientMessage(m)
+	if handled || err != nil {
+		return err
 	}
 
 	return r.showMainMenu(m.Chat.ID)
