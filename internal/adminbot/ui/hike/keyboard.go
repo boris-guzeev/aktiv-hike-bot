@@ -100,6 +100,9 @@ func HikeDetailsKeyboard() tgbot.ReplyKeyboardMarkup {
 			tgbot.NewKeyboardButton(ButtonEditPriceGel),
 		),
 		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton(ButtonEditType),
+		),
+		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton(ButtonBack),
 		),
 	)

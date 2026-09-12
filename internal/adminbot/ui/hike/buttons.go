@@ -14,4 +14,5 @@ const (
 	ButtonEditDescriptionRu = "✏️ Редактировать описание RU"
 	ButtonEditDates         = "✏️ Редактировать даты"
 	ButtonEditPriceGel      = "✏️ Редактировать цену GEL"
+	ButtonEditType          = "✏️ Редактировать Тип"
 )

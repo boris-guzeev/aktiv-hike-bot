@@ -26,8 +26,9 @@ INSERT INTO hikes (
     price_gel,
     distance_km,
     elevation_gain_m,
+    hike_type_id,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 RETURNING id
 `
 
@@ -43,6 +44,7 @@ type CreateHikeParams struct {
 	PriceGel       int32          `db:"price_gel" json:"price_gel"`
 	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
 	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	HikeTypeID     pgtype.Int4    `db:"hike_type_id" json:"hike_type_id"`
 	IsPublished    bool           `db:"is_published" json:"is_published"`
 }
 
@@ -62,6 +64,7 @@ func (q *Queries) CreateHike(ctx context.Context, arg CreateHikeParams) (int32, 
 		arg.PriceGel,
 		arg.DistanceKm,
 		arg.ElevationGainM,
+		arg.HikeTypeID,
 		arg.IsPublished,
 	)
 	var id int32
@@ -109,12 +112,40 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int32) (GetBookingByIDR
 }
 
 const getHikeByID = `-- name: GetHikeByID :one
-SELECT id, title_ru, title_en, description_ru, description_en, starts_at, ends_at, photo_file_id, is_published, created_at, updated_at, image_path, price_gel, elevation_gain_m, distance_km, preview_ru FROM hikes WHERE id = $1
+SELECT
+    h.id, h.title_ru, h.title_en, h.description_ru, h.description_en, h.starts_at, h.ends_at, h.photo_file_id, h.is_published, h.created_at, h.updated_at, h.image_path, h.price_gel, h.elevation_gain_m, h.distance_km, h.preview_ru, h.hike_type_id,
+    ht.name AS hike_type_name,
+    ht.points AS hike_type_points
+FROM hikes h
+LEFT JOIN hike_types ht ON ht.id = h.hike_type_id
+WHERE h.id = $1
 `
 
-func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
+type GetHikeByIDRow struct {
+	ID             int32          `db:"id" json:"id"`
+	TitleRu        string         `db:"title_ru" json:"title_ru"`
+	TitleEn        pgtype.Text    `db:"title_en" json:"title_en"`
+	DescriptionRu  string         `db:"description_ru" json:"description_ru"`
+	DescriptionEn  pgtype.Text    `db:"description_en" json:"description_en"`
+	StartsAt       time.Time      `db:"starts_at" json:"starts_at"`
+	EndsAt         time.Time      `db:"ends_at" json:"ends_at"`
+	PhotoFileID    pgtype.Text    `db:"photo_file_id" json:"photo_file_id"`
+	IsPublished    bool           `db:"is_published" json:"is_published"`
+	CreatedAt      time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
+	ImagePath      pgtype.Text    `db:"image_path" json:"image_path"`
+	PriceGel       int32          `db:"price_gel" json:"price_gel"`
+	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
+	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
+	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
+	HikeTypeID     pgtype.Int4    `db:"hike_type_id" json:"hike_type_id"`
+	HikeTypeName   pgtype.Text    `db:"hike_type_name" json:"hike_type_name"`
+	HikeTypePoints pgtype.Int4    `db:"hike_type_points" json:"hike_type_points"`
+}
+
+func (q *Queries) GetHikeByID(ctx context.Context, id int32) (GetHikeByIDRow, error) {
 	row := q.db.QueryRow(ctx, getHikeByID, id)
-	var i Hike
+	var i GetHikeByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.TitleRu,
@@ -132,6 +163,9 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (Hike, error) {
 		&i.ElevationGainM,
 		&i.DistanceKm,
 		&i.PreviewRu,
+		&i.HikeTypeID,
+		&i.HikeTypeName,
+		&i.HikeTypePoints,
 	)
 	return i, err
 }
@@ -236,6 +270,32 @@ func (q *Queries) ListAdminBookings(ctx context.Context, takenByAdminID pgtype.I
 			&i.TakenAt,
 			&i.CreatedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHikeTypes = `-- name: ListHikeTypes :many
+SELECT id, name, points
+FROM hike_types
+ORDER BY id
+`
+
+func (q *Queries) ListHikeTypes(ctx context.Context) ([]HikeType, error) {
+	rows, err := q.db.Query(ctx, listHikeTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []HikeType
+	for rows.Next() {
+		var i HikeType
+		if err := rows.Scan(&i.ID, &i.Name, &i.Points); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -400,6 +460,20 @@ type UpdateDescriptionRuParams struct {
 
 func (q *Queries) UpdateDescriptionRu(ctx context.Context, arg UpdateDescriptionRuParams) error {
 	_, err := q.db.Exec(ctx, updateDescriptionRu, arg.ID, arg.DescriptionRu)
+	return err
+}
+
+const updateHikeType = `-- name: UpdateHikeType :exec
+UPDATE hikes SET hike_type_id = $2 WHERE id = $1
+`
+
+type UpdateHikeTypeParams struct {
+	ID         int32       `db:"id" json:"id"`
+	HikeTypeID pgtype.Int4 `db:"hike_type_id" json:"hike_type_id"`
+}
+
+func (q *Queries) UpdateHikeType(ctx context.Context, arg UpdateHikeTypeParams) error {
+	_, err := q.db.Exec(ctx, updateHikeType, arg.ID, arg.HikeTypeID)
 	return err
 }
 

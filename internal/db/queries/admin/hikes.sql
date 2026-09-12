@@ -15,8 +15,9 @@ INSERT INTO hikes (
     price_gel,
     distance_km,
     elevation_gain_m,
+    hike_type_id,
     is_published
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 RETURNING id;
 
 -- name: UpdateTitleRu :exec
@@ -34,6 +35,9 @@ UPDATE hikes SET starts_at = $2, ends_at = $3 WHERE id = $1;
 -- name: UpdatePriceGel :exec
 UPDATE hikes SET price_gel = $2 WHERE id = $1;
 
+-- name: UpdateHikeType :exec
+UPDATE hikes SET hike_type_id = $2 WHERE id = $1;
+
 -- name: UpdateImagePath :exec
 UPDATE hikes SET image_path = $2 WHERE id = $1;
 
@@ -41,7 +45,18 @@ UPDATE hikes SET image_path = $2 WHERE id = $1;
 DELETE FROM hikes WHERE id = $1;
 
 -- name: GetHikeByID :one
-SELECT * FROM hikes WHERE id = $1;
+SELECT
+    h.*,
+    ht.name AS hike_type_name,
+    ht.points AS hike_type_points
+FROM hikes h
+LEFT JOIN hike_types ht ON ht.id = h.hike_type_id
+WHERE h.id = $1;
+
+-- name: ListHikeTypes :many
+SELECT id, name, points
+FROM hike_types
+ORDER BY id;
 
 -- name: ListHikes :many
 SELECT 

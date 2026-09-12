@@ -24,7 +24,7 @@ func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error)
 	if err != nil {
 		return service.Hike{}, logger.WrapError(err)
 	}
-	return service.Hike{
+	hike := service.Hike{
 		ID:            rawHike.ID,
 		TitleRu:       rawHike.TitleRu,
 		PreviewRu:     rawHike.PreviewRu,
@@ -33,7 +33,15 @@ func (r repository) GetHike(ctx context.Context, id int32) (service.Hike, error)
 		EndsAt:        rawHike.EndsAt,
 		IsPublished:   rawHike.IsPublished,
 		PriceGel:      rawHike.PriceGel,
-	}, nil
+	}
+	if rawHike.HikeTypeID.Valid && rawHike.HikeTypeName.Valid && rawHike.HikeTypePoints.Valid {
+		hike.Type = &service.HikeType{
+			ID:     rawHike.HikeTypeID.Int32,
+			Name:   rawHike.HikeTypeName.String,
+			Points: rawHike.HikeTypePoints.Int32,
+		}
+	}
+	return hike, nil
 }
 
 func (r repository) ListHikes(ctx context.Context, limit, offset int32) ([]service.Hike, error) {
@@ -114,6 +122,10 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 		Int32: int32(hike.ElevationGainM),
 		Valid: hike.ElevationGainM != 0,
 	}
+	hikeTypeID := pgtype.Int4{}
+	if hike.Type != nil {
+		hikeTypeID = pgtype.Int4{Int32: hike.Type.ID, Valid: true}
+	}
 
 	return r.queries.CreateHike(ctx, admin.CreateHikeParams{
 		TitleRu:        hike.TitleRu,
@@ -124,6 +136,7 @@ func (r repository) CreateHike(ctx context.Context, hike service.Hike) (int32, e
 		PriceGel:       hike.PriceGel,
 		DistanceKm:     distanceKm,
 		ElevationGainM: elevationGainM,
+		HikeTypeID:     hikeTypeID,
 	})
 }
 
@@ -166,6 +179,31 @@ func (r repository) UpdatePriceGel(ctx context.Context, hikeID, price int32) err
 		PriceGel: price,
 	})
 	return logger.WrapError(err)
+}
+
+func (r repository) UpdateHikeType(ctx context.Context, hikeID, hikeTypeID int32) error {
+	err := r.queries.UpdateHikeType(ctx, admin.UpdateHikeTypeParams{
+		ID:         hikeID,
+		HikeTypeID: pgtype.Int4{Int32: hikeTypeID, Valid: true},
+	})
+	return logger.WrapError(err)
+}
+
+func (r repository) ListHikeTypes(ctx context.Context) ([]service.HikeType, error) {
+	rawTypes, err := r.queries.ListHikeTypes(ctx)
+	if err != nil {
+		return nil, logger.WrapError(err)
+	}
+
+	types := make([]service.HikeType, 0, len(rawTypes))
+	for _, rawType := range rawTypes {
+		types = append(types, service.HikeType{
+			ID:     rawType.ID,
+			Name:   rawType.Name,
+			Points: rawType.Points,
+		})
+	}
+	return types, nil
 }
 
 func (r repository) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {

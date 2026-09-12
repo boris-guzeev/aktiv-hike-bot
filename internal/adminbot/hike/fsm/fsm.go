@@ -17,6 +17,7 @@ const (
 	StateConfirm     State = "confirm"
 
 	StateCreatePrice         State = "create_price"
+	StateCreateType          State = "create_type"
 	StateCreateDistanceKm    State = "create_distance_km"
 	StateCreateElevationGain State = "create_elevation_gain"
 
@@ -31,6 +32,7 @@ const (
 	StateEditHikeDescriptionRU State = "edit_hike_description_ru"
 	StateEditHikeDates         State = "edit_hike_dates"
 	StateEditHikePriceGEL      State = "edit_hike_price_gel"
+	StateEditHikeType          State = "edit_hike_type"
 )
 
 type session struct {

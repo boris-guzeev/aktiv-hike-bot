@@ -18,6 +18,13 @@ type Hike struct {
 	PhotoFileID    string
 	ImagePath      string
 	IsPublished    bool
+	Type           *HikeType
+}
+
+type HikeType struct {
+	ID     int32
+	Name   string
+	Points int32
 }
 
 type Repository interface {
@@ -32,7 +39,9 @@ type Repository interface {
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
 	UpdatePriceGel(ctx context.Context, hikeID, price int32) error
+	UpdateHikeType(ctx context.Context, hikeID, hikeTypeID int32) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
+	ListHikeTypes(ctx context.Context) ([]HikeType, error)
 
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
@@ -50,7 +59,9 @@ type Service interface {
 	UpdateDescriptionRu(ctx context.Context, hikeID int32, description string) error
 	UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt time.Time) error
 	UpdatePriceGel(ctx context.Context, hikeID, price int32) error
+	UpdateHikeType(ctx context.Context, hikeID, hikeTypeID int32) error
 	UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error
+	ListHikeTypes(ctx context.Context) ([]HikeType, error)
 
 	HideHike(ctx context.Context, id int32) error
 	DeleteHike(ctx context.Context, id int32) error
@@ -104,6 +115,14 @@ func (s service) UpdateDates(ctx context.Context, hikeID int32, startsAt, endsAt
 
 func (s service) UpdatePriceGel(ctx context.Context, hikeID, price int32) error {
 	return s.repo.UpdatePriceGel(ctx, hikeID, price)
+}
+
+func (s service) UpdateHikeType(ctx context.Context, hikeID, hikeTypeID int32) error {
+	return s.repo.UpdateHikeType(ctx, hikeID, hikeTypeID)
+}
+
+func (s service) ListHikeTypes(ctx context.Context) ([]HikeType, error) {
+	return s.repo.ListHikeTypes(ctx)
 }
 
 func (s service) UpdateImagePath(ctx context.Context, hikeID int32, imagePath string) error {

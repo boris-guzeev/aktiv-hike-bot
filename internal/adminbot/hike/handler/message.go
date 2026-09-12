@@ -36,6 +36,7 @@ func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 	case fsm.StateCreateTitleRU,
 		fsm.StateCreatePreviewRU,
 		fsm.StateCreateDescRU,
+		fsm.StateCreateType,
 		fsm.StateCreatePrice,
 		fsm.StateCreateDistanceKm,
 		fsm.StateCreateElevationGain,
@@ -55,7 +56,8 @@ func (h *HikeHandler) HandleFSM(ctx context.Context, m *tgbot.Message) error {
 		fsm.StateEditHikePreviewRU,
 		fsm.StateEditHikeDescriptionRU,
 		fsm.StateEditHikeDates,
-		fsm.StateEditHikePriceGEL:
+		fsm.StateEditHikePriceGEL,
+		fsm.StateEditHikeType:
 		return h.HandleHikeDetailsFlow(ctx, m)
 
 	default:
@@ -237,6 +239,9 @@ func (h *HikeHandler) HandleHikeDetailsFlow(ctx context.Context, m *tgbot.Messag
 
 	case fsm.StateEditHikePriceGEL:
 		return h.handleEditPriceGel(ctx, m)
+
+	case fsm.StateEditHikeType:
+		return h.handleEditHikeType(ctx, m)
 	}
 
 	h.fsm.Reset(m.From.ID)
@@ -370,6 +375,18 @@ func (h *HikeHandler) handleHikeDetailsActions(ctx context.Context, m *tgbot.Mes
 
 		// New Price (GEL) Request
 		msg := tgbot.NewMessage(m.Chat.ID, "Введите новую цену (GEL):")
+		msg.ReplyMarkup = common.OnlyBackKeyboard()
+		_, err = h.bot.Send(msg)
+		return logger.WrapError(err)
+
+	case hikeUI.ButtonEditType:
+		types, err := h.service.ListHikeTypes(ctx)
+		if err != nil {
+			return logger.WrapError(err)
+		}
+
+		h.fsm.Set(m.From.ID, fsm.StateEditHikeType)
+		msg := tgbot.NewMessage(m.Chat.ID, buildHikeTypesMessage(types))
 		msg.ReplyMarkup = common.OnlyBackKeyboard()
 		_, err = h.bot.Send(msg)
 		return logger.WrapError(err)
@@ -539,6 +556,71 @@ func (h *HikeHandler) handleEditPriceGel(ctx context.Context, m *tgbot.Message) 
 	return h.showHikeDetails(ctx, m)
 }
 
+func (h *HikeHandler) handleEditHikeType(ctx context.Context, m *tgbot.Message) error {
+	typeID64, err := strconv.ParseInt(strings.TrimSpace(m.Text), 10, 32)
+	if err != nil || typeID64 < 1 {
+		_, sendErr := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите корректный номер типа хайка из списка."))
+		return sendErr
+	}
+
+	types, err := h.service.ListHikeTypes(ctx)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	typeID := int32(typeID64)
+	found := false
+	for _, hikeType := range types {
+		if hikeType.ID == typeID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		_, sendErr := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Тип хайка с таким номером не найден. Введите номер из списка."))
+		return sendErr
+	}
+
+	data := h.fsm.Data(m.From.ID)
+	hikeID, err := strconv.ParseInt(data["selected_hike_id"], 10, 32)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
+	if err := h.service.UpdateHikeType(ctx, int32(hikeID), typeID); err != nil {
+		return logger.WrapError(err)
+	}
+
+	h.fsm.Set(m.From.ID, fsm.StateViewDetailsHike)
+	if _, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Тип хайка обновлён ✅")); err != nil {
+		return logger.WrapError(err)
+	}
+	return h.showHikeDetails(ctx, m)
+}
+
+func buildHikeTypesMessage(types []service.HikeType) string {
+	var b strings.Builder
+	b.WriteString("Выберите тип хайка и отправьте его номер:\n\n")
+	for _, hikeType := range types {
+		b.WriteString(fmt.Sprintf("%d — %s\n", hikeType.ID, formatHikeType(hikeType)))
+	}
+	return b.String()
+}
+
+func formatHikeType(hikeType service.HikeType) string {
+	return fmt.Sprintf("%s (%d %s)", hikeType.Name, hikeType.Points, pointsWord(hikeType.Points))
+}
+
+func pointsWord(points int32) string {
+	if points%10 == 1 && points%100 != 11 {
+		return "балл"
+	}
+	if points%10 >= 2 && points%10 <= 4 && (points%100 < 12 || points%100 > 14) {
+		return "балла"
+	}
+	return "баллов"
+}
+
 func (h *HikeHandler) showHikeDetails(ctx context.Context, m *tgbot.Message) error {
 	data := h.fsm.Data(m.From.ID)
 
@@ -596,6 +678,14 @@ func buildHikeDetailsMessage(hike service.Hike) string {
 
 	if hike.ElevationGainM != 0 {
 		b.WriteString(fmt.Sprintf("<b>Набор высоты:</b> %d м\n", hike.ElevationGainM))
+	}
+
+	if hike.Type == nil {
+		b.WriteString("<b>Тип:</b> —\n")
+	} else {
+		hikeType := *hike.Type
+		hikeType.Name = html.EscapeString(hikeType.Name)
+		b.WriteString(fmt.Sprintf("<b>Тип:</b> %s\n", formatHikeType(hikeType)))
 	}
 
 	if strings.TrimSpace(hike.PreviewRu) == "" {
@@ -758,6 +848,39 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 
 	case fsm.StateCreateDescRU:
 		h.fsm.Put(m.From.ID, "description_ru", strings.TrimSpace(m.Text))
+		types, err := h.service.ListHikeTypes(ctx)
+		if err != nil {
+			return logger.WrapError(err)
+		}
+
+		h.fsm.Set(m.From.ID, fsm.StateCreateType)
+		return h.sendCreateStep(m.Chat.ID, buildHikeTypesMessage(types))
+
+	case fsm.StateCreateType:
+		typeID64, err := strconv.ParseInt(strings.TrimSpace(m.Text), 10, 32)
+		if err != nil || typeID64 < 1 {
+			return h.sendCreateStep(m.Chat.ID, "Введите корректный номер типа хайка из списка.")
+		}
+
+		types, err := h.service.ListHikeTypes(ctx)
+		if err != nil {
+			return logger.WrapError(err)
+		}
+
+		var selectedType *service.HikeType
+		for i := range types {
+			if types[i].ID == int32(typeID64) {
+				selectedType = &types[i]
+				break
+			}
+		}
+		if selectedType == nil {
+			return h.sendCreateStep(m.Chat.ID, "Тип хайка с таким номером не найден. Введите номер из списка.")
+		}
+
+		h.fsm.Put(m.From.ID, "hike_type_id", strconv.FormatInt(typeID64, 10))
+		h.fsm.Put(m.From.ID, "hike_type_name", selectedType.Name)
+		h.fsm.Put(m.From.ID, "hike_type_points", strconv.FormatInt(int64(selectedType.Points), 10))
 		h.fsm.Set(m.From.ID, fsm.StateCreatePrice)
 
 		return h.sendCreateStep(m.Chat.ID, "Введите цену в лари (например: 120):")
@@ -845,6 +968,7 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 				"🏔 Название: %s\n"+
 				"🔎 Превью: %s\n"+
 				"📝 Описание: %s\n"+
+				"🎯 Тип: %s\n"+
 				"💰 Цена: %s GEL\n"+
 				"📏 Длина: %s км\n"+
 				"⛰ Набор высоты: %s м\n"+
@@ -855,6 +979,10 @@ func (h *HikeHandler) HandleCreateHike(ctx context.Context, m *tgbot.Message) er
 			h.fsm.Data(m.From.ID)["title_ru"],
 			h.fsm.Data(m.From.ID)["preview_ru"],
 			h.fsm.Data(m.From.ID)["description_ru"],
+			formatHikeType(service.HikeType{
+				Name:   h.fsm.Data(m.From.ID)["hike_type_name"],
+				Points: mustParseInt32(h.fsm.Data(m.From.ID)["hike_type_points"]),
+			}),
 			h.fsm.Data(m.From.ID)["price_gel"],
 			h.fsm.Data(m.From.ID)["distance_km"],
 			h.fsm.Data(m.From.ID)["elevation_gain_m"],
@@ -928,6 +1056,11 @@ func countClientCaption(data map[string]string) int {
 	))
 }
 
+func mustParseInt32(value string) int32 {
+	parsed, _ := strconv.ParseInt(value, 10, 32)
+	return int32(parsed)
+}
+
 func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 	data := h.fsm.Data(userID)
 
@@ -956,6 +1089,15 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 		return logger.WrapError(err)
 	}
 
+	hikeTypeID, err := strconv.ParseInt(data["hike_type_id"], 10, 32)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+	hikeTypePoints, err := strconv.ParseInt(data["hike_type_points"], 10, 32)
+	if err != nil {
+		return logger.WrapError(err)
+	}
+
 	previewRu := strings.TrimSpace(h.fsm.Data(userID)["preview_ru"])
 	if previewRu == "" {
 		return logger.WrapError(errors.New("preview_ru is empty"))
@@ -975,6 +1117,11 @@ func (h *HikeHandler) saveCreatedHike(ctx context.Context, userID int64) error {
 		StartsAt:       startAt,
 		EndsAt:         endsAt,
 		PhotoFileID:    data["photo_file_id"],
+		Type: &service.HikeType{
+			ID:     int32(hikeTypeID),
+			Name:   data["hike_type_name"],
+			Points: int32(hikeTypePoints),
+		},
 	}
 
 	createdHikeID, err := h.service.CreateHike(ctx, hike)

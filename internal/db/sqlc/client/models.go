@@ -44,6 +44,13 @@ type Hike struct {
 	ElevationGainM pgtype.Int4    `db:"elevation_gain_m" json:"elevation_gain_m"`
 	DistanceKm     pgtype.Numeric `db:"distance_km" json:"distance_km"`
 	PreviewRu      string         `db:"preview_ru" json:"preview_ru"`
+	HikeTypeID     pgtype.Int4    `db:"hike_type_id" json:"hike_type_id"`
+}
+
+type HikeType struct {
+	ID     int32  `db:"id" json:"id"`
+	Name   string `db:"name" json:"name"`
+	Points int32  `db:"points" json:"points"`
 }
 
 type Notification struct {
