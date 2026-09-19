@@ -211,9 +211,16 @@ func (h *Handler) showAchievements(ctx context.Context, chatID int64, userID int
 		if a.Assigned {
 			mark = "✅"
 		}
-		fmt.Fprintf(&b, "ID %d · %s <b>%s</b>\n", a.ID, mark, html.EscapeString(a.Name))
+		fmt.Fprintf(
+			&b,
+			"ID %d · %s <b>%s</b>\n%s\n\n",
+			a.ID,
+			mark,
+			html.EscapeString(a.Name),
+			html.EscapeString(a.Description),
+		)
 	}
-	b.WriteString("\nОтправьте ID, чтобы добавить или убрать достижение.")
+	b.WriteString("Отправьте ID, чтобы добавить или убрать достижение.")
 	msg := tgbot.NewMessage(chatID, b.String())
 	msg.ParseMode = tgbot.ModeHTML
 	msg.ReplyMarkup = userUI.BackKeyboard()
