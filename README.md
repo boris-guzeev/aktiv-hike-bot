@@ -168,3 +168,7 @@ __repository__ — database access
 * Easy scaling
 * Maintainable codebase
 * Clear separation of domains
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
