@@ -100,6 +100,41 @@ DO UPDATE SET
     lang        = EXCLUDED.lang
 RETURNING id;
 
+-- name: ListTelegramUsers :many
+SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
+       COALESCE(full_name, '') AS full_name
+FROM telegram_users
+ORDER BY COALESCE(full_name, ''), COALESCE(tg_username, ''), id;
+
+-- name: GetTelegramUser :one
+SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
+       COALESCE(full_name, '') AS full_name
+FROM telegram_users
+WHERE id = $1;
+
+-- name: ListUserAchievements :many
+SELECT a.id, a.name, a.description,
+       (uta.telegram_user_id IS NOT NULL)::boolean AS assigned
+FROM achievements a
+LEFT JOIN telegram_users_to_achievements uta
+  ON uta.achievement_id = a.id AND uta.telegram_user_id = $1
+ORDER BY a.id;
+
+-- name: ToggleUserAchievement :one
+WITH deleted AS (
+    DELETE FROM telegram_users_to_achievements AS tua
+    WHERE tua.telegram_user_id = sqlc.arg(user_id_arg)
+      AND tua.achievement_id = sqlc.arg(achievement_id_arg)
+    RETURNING achievement_id
+), inserted AS (
+    INSERT INTO telegram_users_to_achievements (telegram_user_id, achievement_id)
+    SELECT sqlc.arg(user_id_arg), sqlc.arg(achievement_id_arg)
+    WHERE NOT EXISTS (SELECT 1 FROM deleted)
+    ON CONFLICT DO NOTHING
+    RETURNING achievement_id
+)
+SELECT EXISTS (SELECT 1 FROM inserted) AS assigned;
+
 -- =========================================
 -- BOOKINGS
 -- =========================================

@@ -7,9 +7,11 @@ import (
 	bookingUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/booking"
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/common"
 	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
+	userUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/user"
 
 	bookingHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/booking/handler"
 	hikeHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/handler"
+	userHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/user/handler"
 
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -19,14 +21,16 @@ type router struct {
 	adminChatID    int64
 	hikeHandler    *hikeHandler.HikeHandler
 	bookingHandler *bookingHandler.BookingHandler
+	userHandler    *userHandler.Handler
 }
 
-func NewRouter(b *tgbot.BotAPI, acID int64, hH *hikeHandler.HikeHandler, bH *bookingHandler.BookingHandler) *router {
+func NewRouter(b *tgbot.BotAPI, acID int64, hH *hikeHandler.HikeHandler, bH *bookingHandler.BookingHandler, uH *userHandler.Handler) *router {
 	return &router{
 		bot:            b,
 		adminChatID:    acID,
 		hikeHandler:    hH,
 		bookingHandler: bH,
+		userHandler:    uH,
 	}
 }
 
@@ -65,8 +69,13 @@ var bookingButtons = map[string]struct{}{
 }
 
 func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
+	if r.userHandler.InProgress(m.From.ID) {
+		return r.userHandler.Handle(ctx, m)
+	}
+
 	if m.Text == common.ButtonBack {
 		r.hikeHandler.ResetFSM(m.From.ID)
+		r.userHandler.Reset(m.From.ID)
 		return r.showMainMenu(m.Chat.ID)
 	}
 
@@ -80,6 +89,10 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 
 	if _, ok := bookingButtons[m.Text]; ok {
 		return r.routeBookingMessage(ctx, m)
+	}
+
+	if m.Text == userUI.ButtonUsers {
+		return r.userHandler.ListUsers(ctx, m)
 	}
 
 	if m.Text == common.ButtonHelp {

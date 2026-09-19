@@ -10,6 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Achievement struct {
+	ID          int16  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Description string `db:"description" json:"description"`
+}
+
 type Admin struct {
 	ID        int32     `db:"id" json:"id"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
@@ -88,4 +94,9 @@ type TelegramUser struct {
 	Lang       string      `db:"lang" json:"lang"`
 	IsAdmin    bool        `db:"is_admin" json:"is_admin"`
 	CreatedAt  time.Time   `db:"created_at" json:"created_at"`
+}
+
+type TelegramUsersToAchievement struct {
+	TelegramUserID int32 `db:"telegram_user_id" json:"telegram_user_id"`
+	AchievementID  int16 `db:"achievement_id" json:"achievement_id"`
 }

@@ -17,6 +17,7 @@ import (
 	hikeRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/repository"
 	hikeService "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/service"
 
+	userHandler "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/user/handler"
 	userRepository "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/user/repository"
 	userService "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/user/service"
 
@@ -66,6 +67,7 @@ func main() {
 	// --- User --- /
 	userRepo := userRepository.New(queries)
 	userSvc := userService.New(userRepo)
+	userHnd := userHandler.New(bot, userSvc)
 
 	// --- Booking --- /
 	bookingRepo := bookingRepository.New(queries)
@@ -73,7 +75,7 @@ func main() {
 	bookingHnd := bookingHandler.New(log, bot, userSvc, bookingSvc)
 
 	// Init router
-	r := adminbot.NewRouter(bot, cfg.AdminChatID, hikeHnd, bookingHnd)
+	r := adminbot.NewRouter(bot, cfg.AdminChatID, hikeHnd, bookingHnd, userHnd)
 
 	u := tgbot.NewUpdate(0)
 	u.Timeout = 30

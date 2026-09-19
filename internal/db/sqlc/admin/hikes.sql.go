@@ -170,6 +170,32 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (GetHikeByIDRow, er
 	return i, err
 }
 
+const getTelegramUser = `-- name: GetTelegramUser :one
+SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
+       COALESCE(full_name, '') AS full_name
+FROM telegram_users
+WHERE id = $1
+`
+
+type GetTelegramUserRow struct {
+	ID         int32  `db:"id" json:"id"`
+	TgUserID   int64  `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername string `db:"tg_username" json:"tg_username"`
+	FullName   string `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) GetTelegramUser(ctx context.Context, id int32) (GetTelegramUserRow, error) {
+	row := q.db.QueryRow(ctx, getTelegramUser, id)
+	var i GetTelegramUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.TgUserID,
+		&i.TgUsername,
+		&i.FullName,
+	)
+	return i, err
+}
+
 const listActualHikes = `-- name: ListActualHikes :many
 SELECT id, title_ru, starts_at, ends_at, is_published
 FROM hikes
@@ -370,6 +396,86 @@ func (q *Queries) ListHikes(ctx context.Context, arg ListHikesParams) ([]ListHik
 	return items, nil
 }
 
+const listTelegramUsers = `-- name: ListTelegramUsers :many
+SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
+       COALESCE(full_name, '') AS full_name
+FROM telegram_users
+ORDER BY COALESCE(full_name, ''), COALESCE(tg_username, ''), id
+`
+
+type ListTelegramUsersRow struct {
+	ID         int32  `db:"id" json:"id"`
+	TgUserID   int64  `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername string `db:"tg_username" json:"tg_username"`
+	FullName   string `db:"full_name" json:"full_name"`
+}
+
+func (q *Queries) ListTelegramUsers(ctx context.Context) ([]ListTelegramUsersRow, error) {
+	rows, err := q.db.Query(ctx, listTelegramUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTelegramUsersRow
+	for rows.Next() {
+		var i ListTelegramUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TgUserID,
+			&i.TgUsername,
+			&i.FullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserAchievements = `-- name: ListUserAchievements :many
+SELECT a.id, a.name, a.description,
+       (uta.telegram_user_id IS NOT NULL)::boolean AS assigned
+FROM achievements a
+LEFT JOIN telegram_users_to_achievements uta
+  ON uta.achievement_id = a.id AND uta.telegram_user_id = $1
+ORDER BY a.id
+`
+
+type ListUserAchievementsRow struct {
+	ID          int16  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Description string `db:"description" json:"description"`
+	Assigned    bool   `db:"assigned" json:"assigned"`
+}
+
+func (q *Queries) ListUserAchievements(ctx context.Context, telegramUserID int32) ([]ListUserAchievementsRow, error) {
+	rows, err := q.db.Query(ctx, listUserAchievements, telegramUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUserAchievementsRow
+	for rows.Next() {
+		var i ListUserAchievementsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Assigned,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setPublished = `-- name: SetPublished :exec
 UPDATE hikes
 SET is_published = $1, updated_at = now()
@@ -384,6 +490,34 @@ type SetPublishedParams struct {
 func (q *Queries) SetPublished(ctx context.Context, arg SetPublishedParams) error {
 	_, err := q.db.Exec(ctx, setPublished, arg.IsPublished, arg.ID)
 	return err
+}
+
+const toggleUserAchievement = `-- name: ToggleUserAchievement :one
+WITH deleted AS (
+    DELETE FROM telegram_users_to_achievements AS tua
+    WHERE tua.telegram_user_id = $1
+      AND tua.achievement_id = $2
+    RETURNING achievement_id
+), inserted AS (
+    INSERT INTO telegram_users_to_achievements (telegram_user_id, achievement_id)
+    SELECT $1, $2
+    WHERE NOT EXISTS (SELECT 1 FROM deleted)
+    ON CONFLICT DO NOTHING
+    RETURNING achievement_id
+)
+SELECT EXISTS (SELECT 1 FROM inserted) AS assigned
+`
+
+type ToggleUserAchievementParams struct {
+	UserIDArg        int32 `db:"user_id_arg" json:"user_id_arg"`
+	AchievementIDArg int16 `db:"achievement_id_arg" json:"achievement_id_arg"`
+}
+
+func (q *Queries) ToggleUserAchievement(ctx context.Context, arg ToggleUserAchievementParams) (bool, error) {
+	row := q.db.QueryRow(ctx, toggleUserAchievement, arg.UserIDArg, arg.AchievementIDArg)
+	var assigned bool
+	err := row.Scan(&assigned)
+	return assigned, err
 }
 
 const updateBookingStatus = `-- name: UpdateBookingStatus :execrows

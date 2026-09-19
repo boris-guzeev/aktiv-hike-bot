@@ -9,6 +9,9 @@ func MainMenu() tgbot.ReplyKeyboardMarkup {
 			tgbot.NewKeyboardButton("📥 Заявки"),
 		),
 		tgbot.NewKeyboardButtonRow(
+			tgbot.NewKeyboardButton("👥 Пользователи"),
+		),
+		tgbot.NewKeyboardButtonRow(
 			tgbot.NewKeyboardButton("❓ Помощь"),
 		),
 	)
