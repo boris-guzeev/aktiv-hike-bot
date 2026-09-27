@@ -71,7 +71,11 @@ SELECT
     created_at 
 FROM 
     hikes 
-ORDER BY is_published DESC, created_at DESC
+ORDER BY
+    (ends_at >= now()) DESC,
+    CASE WHEN ends_at >= now() THEN starts_at END ASC,
+    CASE WHEN ends_at < now() THEN starts_at END DESC,
+    id ASC
 LIMIT $1 OFFSET $2;
 
 -- name: ListActualHikes :many
