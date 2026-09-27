@@ -2,10 +2,33 @@ package handler
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/hike/fsm"
+	hikeUI "github.com/boris-guzeev/aktiv-hike-bot/internal/adminbot/ui/hike"
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+func (h *HikeHandler) HandleCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
+	if !strings.HasPrefix(q.Data, hikeUI.CallbackListHikesPagePrefix) {
+		return nil
+	}
+
+	page, err := strconv.ParseInt(strings.TrimPrefix(q.Data, hikeUI.CallbackListHikesPagePrefix), 10, 32)
+	if err != nil || page < 1 {
+		_, answerErr := h.bot.Request(tgbot.NewCallback(q.ID, "Некорректная страница"))
+		return answerErr
+	}
+
+	h.fsm.Set(q.From.ID, fsm.StateSelectHikeID)
+	if err := h.sendHikesPage(ctx, q.Message.Chat.ID, q.Message.MessageID, int32(page)); err != nil {
+		return err
+	}
+
+	_, err = h.bot.Request(tgbot.NewCallback(q.ID, ""))
+	return err
+}
 
 func (h *HikeHandler) HandleConfirm(ctx context.Context, q *tgbot.CallbackQuery) error {
 	userID := q.From.ID

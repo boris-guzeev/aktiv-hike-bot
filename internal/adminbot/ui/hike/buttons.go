@@ -9,6 +9,8 @@ const (
 	ButtonCreateHike = "➕ Создать хайк"
 	ButtonListHikes  = "📋 Список хайков"
 
+	CallbackListHikesPagePrefix = "hike:list:page:"
+
 	ButtonEditTitleRu       = "✏️ Редактировать заголовок RU"
 	ButtonEditPreviewRu     = "✏️ Редактировать превью RU"
 	ButtonEditDescriptionRu = "✏️ Редактировать описание RU"

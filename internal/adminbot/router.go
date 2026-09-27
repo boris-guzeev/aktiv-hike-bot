@@ -214,8 +214,7 @@ func (r *router) showMainMenu(chatID int64) error {
 func (r *router) routeCallback(ctx context.Context, q *tgbot.CallbackQuery) error {
 	switch {
 	case strings.HasPrefix(q.Data, "hike:"):
-		return nil
-		// TODO: return r.hikeHandler.HandleCallback(ctx, q)
+		return r.hikeHandler.HandleCallback(ctx, q)
 
 	case strings.HasPrefix(q.Data, "booking:"):
 		return r.bookingHandler.HandleCallback(ctx, q)

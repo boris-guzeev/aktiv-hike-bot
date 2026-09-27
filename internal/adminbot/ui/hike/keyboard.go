@@ -1,6 +1,10 @@
 package hike
 
-import tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+import (
+	"strconv"
+
+	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
 func HikeMenu() tgbot.ReplyKeyboardMarkup {
 	return tgbot.NewReplyKeyboard(
@@ -22,6 +26,28 @@ func ConfirmKeyboard() tgbot.InlineKeyboardMarkup {
 			tgbot.NewInlineKeyboardButtonData("❌ Отмена", "cancel"),
 		),
 	)
+}
+
+func ListHikesPaginationKeyboard(page int32, hasNext bool) tgbot.InlineKeyboardMarkup {
+	buttons := make([]tgbot.InlineKeyboardButton, 0, 2)
+	if page > 1 {
+		buttons = append(buttons, tgbot.NewInlineKeyboardButtonData(
+			"⬅️ Назад",
+			CallbackListHikesPagePrefix+strconv.FormatInt(int64(page-1), 10),
+		))
+	}
+	if hasNext {
+		buttons = append(buttons, tgbot.NewInlineKeyboardButtonData(
+			"Вперёд ➡️",
+			CallbackListHikesPagePrefix+strconv.FormatInt(int64(page+1), 10),
+		))
+	}
+
+	if len(buttons) == 0 {
+		return tgbot.InlineKeyboardMarkup{}
+	}
+
+	return tgbot.NewInlineKeyboardMarkup(tgbot.NewInlineKeyboardRow(buttons...))
 }
 
 func SelectedHikeActionsKeyboard(isPublished bool) tgbot.ReplyKeyboardMarkup {

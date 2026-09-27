@@ -1185,9 +1185,19 @@ func (h *HikeHandler) saveImage(ctx context.Context, fileID string, hikeID int32
 }
 
 func (h *HikeHandler) ListHikes(ctx context.Context, m *tgbot.Message) error {
-	hikes, err := h.service.ListHikes(ctx, 1, 20)
+	if err := h.sendHikesPage(ctx, m.Chat.ID, 0, 1); err != nil {
+		return err
+	}
+	h.fsm.Set(m.From.ID, fsm.StateSelectHikeID)
+	return nil
+}
+
+const hikesPageSize int32 = 20
+
+func (h *HikeHandler) sendHikesPage(ctx context.Context, chatID int64, messageID int, page int32) error {
+	hikes, err := h.service.ListHikes(ctx, page, hikesPageSize)
 	if err != nil {
-		_, sendErr := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Не удалось загрузить список хайков."))
+		_, sendErr := h.bot.Send(tgbot.NewMessage(chatID, "Не удалось загрузить список хайков."))
 		if sendErr != nil {
 			return sendErr
 		}
@@ -1195,12 +1205,20 @@ func (h *HikeHandler) ListHikes(ctx context.Context, m *tgbot.Message) error {
 	}
 
 	if len(hikes) == 0 {
-		_, err := h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Список хайков пуст."))
+		_, err := h.bot.Send(tgbot.NewMessage(chatID, "Список хайков пуст."))
 		return err
+	}
+	hasNext := false
+	if len(hikes) == int(hikesPageSize) {
+		nextPage, nextPageErr := h.service.ListHikes(ctx, page+1, hikesPageSize)
+		if nextPageErr != nil {
+			return nextPageErr
+		}
+		hasNext = len(nextPage) > 0
 	}
 
 	var b strings.Builder
-	b.WriteString("🏔 Список хайков\n\n")
+	b.WriteString(fmt.Sprintf("🏔 Список хайков · страница %d\n\n", page))
 
 	for _, hike := range hikes {
 		status := "📝"
@@ -1218,9 +1236,18 @@ func (h *HikeHandler) ListHikes(ctx context.Context, m *tgbot.Message) error {
 		b.WriteString(line)
 	}
 
-	h.fsm.Set(m.From.ID, fsm.StateSelectHikeID)
 	b.WriteString("\nОтправьте ID хайка, чтобы выбрать действие.")
 
-	_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, b.String()))
+	keyboard := hikeUI.ListHikesPaginationKeyboard(page, hasNext)
+	if messageID != 0 {
+		_, err = h.bot.Send(tgbot.NewEditMessageTextAndMarkup(chatID, messageID, b.String(), keyboard))
+		return err
+	}
+
+	msg := tgbot.NewMessage(chatID, b.String())
+	if len(keyboard.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = keyboard
+	}
+	_, err = h.bot.Send(msg)
 	return err
 }
