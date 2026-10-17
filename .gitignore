@@ -1,5 +1,6 @@
 .history
 .trunk
 .env
+backups/
 PROGRESS-README.md
 LOCAL-README.md
