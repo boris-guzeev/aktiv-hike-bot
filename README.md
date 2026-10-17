@@ -161,6 +161,56 @@ __repository__ — database access
 * Notify admins
 * Client notifications
 
+## Database Backup and Restore
+
+The backup and restore commands require Docker Compose, a running `db` service,
+and valid PostgreSQL settings in `.env`.
+
+### Create a Backup
+
+```sh
+make backup-db
+```
+
+The command creates a PostgreSQL custom-format dump in the `backups/`
+directory. The file name contains the database name and a timestamp, for
+example:
+
+```text
+backups/aktivhike_20261017_143000.dump
+```
+
+The dump is first written to a temporary file and validated with `pg_restore`
+before it is moved to its final path. The `backups/` directory is excluded from
+Git.
+
+To use another output directory, set `BACKUP_DIR`:
+
+```sh
+make backup-db BACKUP_DIR=/path/to/backups
+```
+
+### Restore a Backup
+
+> [!WARNING]
+> Restoring a backup completely replaces the current database.
+
+Specify the dump file and explicitly confirm the operation:
+
+```sh
+make restore-db \
+  BACKUP_FILE=backups/aktivhike_20261017_143000.dump \
+  CONFIRM_RESTORE=yes
+```
+
+Before replacing the database, the command validates the dump and stops the
+running admin and client bot services. After a successful restore, it restarts
+only the bot services that were running beforehand. If the restore fails, the
+bot services remain stopped so that the incomplete database is not used.
+
+Database dumps do not contain files from the `hike_storage` Docker volume.
+Back up that volume separately when a full application backup is required.
+
 ## Design Goals
 
 * Clean architecture
