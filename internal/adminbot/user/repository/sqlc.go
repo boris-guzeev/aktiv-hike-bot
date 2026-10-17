@@ -38,7 +38,19 @@ func (r *repository) ListTelegramUsers(ctx context.Context) ([]service.TelegramU
 	}
 	users := make([]service.TelegramUser, 0, len(rows))
 	for _, row := range rows {
-		users = append(users, service.TelegramUser{ID: row.ID, TgUserID: row.TgUserID, TgUsername: row.TgUsername, FullName: row.FullName})
+		distance, err := row.InitialDistanceKm.Float64Value()
+		if err != nil {
+			return nil, logger.WrapError(err)
+		}
+		users = append(users, service.TelegramUser{
+			ID:                    row.ID,
+			TgUserID:              row.TgUserID,
+			TgUsername:            row.TgUsername,
+			FullName:              row.FullName,
+			InitialHikesCount:     row.InitialHikesCount,
+			InitialDistanceKm:     distance.Float64,
+			InitialElevationGainM: row.InitialElevationGainM,
+		})
 	}
 	return users, nil
 }
@@ -48,7 +60,19 @@ func (r *repository) GetTelegramUser(ctx context.Context, id int32) (service.Tel
 	if err != nil {
 		return service.TelegramUser{}, logger.WrapError(err)
 	}
-	return service.TelegramUser{ID: row.ID, TgUserID: row.TgUserID, TgUsername: row.TgUsername, FullName: row.FullName}, nil
+	distance, err := row.InitialDistanceKm.Float64Value()
+	if err != nil {
+		return service.TelegramUser{}, logger.WrapError(err)
+	}
+	return service.TelegramUser{
+		ID:                    row.ID,
+		TgUserID:              row.TgUserID,
+		TgUsername:            row.TgUsername,
+		FullName:              row.FullName,
+		InitialHikesCount:     row.InitialHikesCount,
+		InitialDistanceKm:     distance.Float64,
+		InitialElevationGainM: row.InitialElevationGainM,
+	}, nil
 }
 
 func (r *repository) ListUserAchievements(ctx context.Context, userID int32) ([]service.Achievement, error) {

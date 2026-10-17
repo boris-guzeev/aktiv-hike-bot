@@ -106,13 +106,15 @@ RETURNING id;
 
 -- name: ListTelegramUsers :many
 SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
-       COALESCE(full_name, '') AS full_name
+       COALESCE(full_name, '') AS full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 ORDER BY COALESCE(full_name, ''), COALESCE(tg_username, ''), id;
 
 -- name: GetTelegramUser :one
 SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
-       COALESCE(full_name, '') AS full_name
+       COALESCE(full_name, '') AS full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 WHERE id = $1;
 

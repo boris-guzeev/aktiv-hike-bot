@@ -3,10 +3,13 @@ package service
 import "context"
 
 type TelegramUser struct {
-	ID         int32
-	TgUserID   int64
-	TgUsername string
-	FullName   string
+	ID                    int32
+	TgUserID              int64
+	TgUsername            string
+	FullName              string
+	InitialHikesCount     int32
+	InitialDistanceKm     float64
+	InitialElevationGainM int32
 }
 
 type Achievement struct {

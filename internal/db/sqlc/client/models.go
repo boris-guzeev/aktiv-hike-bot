@@ -87,13 +87,16 @@ type Payment struct {
 }
 
 type TelegramUser struct {
-	ID         int32       `db:"id" json:"id"`
-	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
-	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
-	FullName   pgtype.Text `db:"full_name" json:"full_name"`
-	Lang       string      `db:"lang" json:"lang"`
-	IsAdmin    bool        `db:"is_admin" json:"is_admin"`
-	CreatedAt  time.Time   `db:"created_at" json:"created_at"`
+	ID                    int32          `db:"id" json:"id"`
+	TgUserID              int64          `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername            pgtype.Text    `db:"tg_username" json:"tg_username"`
+	FullName              pgtype.Text    `db:"full_name" json:"full_name"`
+	Lang                  string         `db:"lang" json:"lang"`
+	IsAdmin               bool           `db:"is_admin" json:"is_admin"`
+	CreatedAt             time.Time      `db:"created_at" json:"created_at"`
+	InitialHikesCount     int32          `db:"initial_hikes_count" json:"initial_hikes_count"`
+	InitialDistanceKm     pgtype.Numeric `db:"initial_distance_km" json:"initial_distance_km"`
+	InitialElevationGainM int32          `db:"initial_elevation_gain_m" json:"initial_elevation_gain_m"`
 }
 
 type TelegramUsersToAchievement struct {

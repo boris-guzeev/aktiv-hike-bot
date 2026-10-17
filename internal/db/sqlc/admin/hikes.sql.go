@@ -172,16 +172,20 @@ func (q *Queries) GetHikeByID(ctx context.Context, id int32) (GetHikeByIDRow, er
 
 const getTelegramUser = `-- name: GetTelegramUser :one
 SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
-       COALESCE(full_name, '') AS full_name
+       COALESCE(full_name, '') AS full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 WHERE id = $1
 `
 
 type GetTelegramUserRow struct {
-	ID         int32  `db:"id" json:"id"`
-	TgUserID   int64  `db:"tg_user_id" json:"tg_user_id"`
-	TgUsername string `db:"tg_username" json:"tg_username"`
-	FullName   string `db:"full_name" json:"full_name"`
+	ID                    int32          `db:"id" json:"id"`
+	TgUserID              int64          `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername            string         `db:"tg_username" json:"tg_username"`
+	FullName              string         `db:"full_name" json:"full_name"`
+	InitialHikesCount     int32          `db:"initial_hikes_count" json:"initial_hikes_count"`
+	InitialDistanceKm     pgtype.Numeric `db:"initial_distance_km" json:"initial_distance_km"`
+	InitialElevationGainM int32          `db:"initial_elevation_gain_m" json:"initial_elevation_gain_m"`
 }
 
 func (q *Queries) GetTelegramUser(ctx context.Context, id int32) (GetTelegramUserRow, error) {
@@ -192,6 +196,9 @@ func (q *Queries) GetTelegramUser(ctx context.Context, id int32) (GetTelegramUse
 		&i.TgUserID,
 		&i.TgUsername,
 		&i.FullName,
+		&i.InitialHikesCount,
+		&i.InitialDistanceKm,
+		&i.InitialElevationGainM,
 	)
 	return i, err
 }
@@ -402,16 +409,20 @@ func (q *Queries) ListHikes(ctx context.Context, arg ListHikesParams) ([]ListHik
 
 const listTelegramUsers = `-- name: ListTelegramUsers :many
 SELECT id, tg_user_id, COALESCE(tg_username, '') AS tg_username,
-       COALESCE(full_name, '') AS full_name
+       COALESCE(full_name, '') AS full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 ORDER BY COALESCE(full_name, ''), COALESCE(tg_username, ''), id
 `
 
 type ListTelegramUsersRow struct {
-	ID         int32  `db:"id" json:"id"`
-	TgUserID   int64  `db:"tg_user_id" json:"tg_user_id"`
-	TgUsername string `db:"tg_username" json:"tg_username"`
-	FullName   string `db:"full_name" json:"full_name"`
+	ID                    int32          `db:"id" json:"id"`
+	TgUserID              int64          `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername            string         `db:"tg_username" json:"tg_username"`
+	FullName              string         `db:"full_name" json:"full_name"`
+	InitialHikesCount     int32          `db:"initial_hikes_count" json:"initial_hikes_count"`
+	InitialDistanceKm     pgtype.Numeric `db:"initial_distance_km" json:"initial_distance_km"`
+	InitialElevationGainM int32          `db:"initial_elevation_gain_m" json:"initial_elevation_gain_m"`
 }
 
 func (q *Queries) ListTelegramUsers(ctx context.Context) ([]ListTelegramUsersRow, error) {
@@ -428,6 +439,9 @@ func (q *Queries) ListTelegramUsers(ctx context.Context) ([]ListTelegramUsersRow
 			&i.TgUserID,
 			&i.TgUsername,
 			&i.FullName,
+			&i.InitialHikesCount,
+			&i.InitialDistanceKm,
+			&i.InitialElevationGainM,
 		); err != nil {
 			return nil, err
 		}

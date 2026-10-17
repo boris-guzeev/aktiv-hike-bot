@@ -138,16 +138,20 @@ func (q *Queries) GetHikeDetails(ctx context.Context, id int32) (GetHikeDetailsR
 }
 
 const getTelegramUserByID = `-- name: GetTelegramUserByID :one
-SELECT id, tg_user_id, tg_username, full_name
+SELECT id, tg_user_id, tg_username, full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 WHERE id = $1
 `
 
 type GetTelegramUserByIDRow struct {
-	ID         int32       `db:"id" json:"id"`
-	TgUserID   int64       `db:"tg_user_id" json:"tg_user_id"`
-	TgUsername pgtype.Text `db:"tg_username" json:"tg_username"`
-	FullName   pgtype.Text `db:"full_name" json:"full_name"`
+	ID                    int32          `db:"id" json:"id"`
+	TgUserID              int64          `db:"tg_user_id" json:"tg_user_id"`
+	TgUsername            pgtype.Text    `db:"tg_username" json:"tg_username"`
+	FullName              pgtype.Text    `db:"full_name" json:"full_name"`
+	InitialHikesCount     int32          `db:"initial_hikes_count" json:"initial_hikes_count"`
+	InitialDistanceKm     pgtype.Numeric `db:"initial_distance_km" json:"initial_distance_km"`
+	InitialElevationGainM int32          `db:"initial_elevation_gain_m" json:"initial_elevation_gain_m"`
 }
 
 func (q *Queries) GetTelegramUserByID(ctx context.Context, id int32) (GetTelegramUserByIDRow, error) {
@@ -158,6 +162,9 @@ func (q *Queries) GetTelegramUserByID(ctx context.Context, id int32) (GetTelegra
 		&i.TgUserID,
 		&i.TgUsername,
 		&i.FullName,
+		&i.InitialHikesCount,
+		&i.InitialDistanceKm,
+		&i.InitialElevationGainM,
 	)
 	return i, err
 }

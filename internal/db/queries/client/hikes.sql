@@ -61,7 +61,8 @@ WHERE id = $1 AND status = $3
 RETURNING id;
 
 -- name: GetTelegramUserByID :one
-SELECT id, tg_user_id, tg_username, full_name
+SELECT id, tg_user_id, tg_username, full_name,
+       initial_hikes_count, initial_distance_km, initial_elevation_gain_m
 FROM telegram_users
 WHERE id = $1;
 

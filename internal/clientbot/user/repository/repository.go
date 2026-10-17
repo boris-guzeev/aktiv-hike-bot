@@ -23,12 +23,19 @@ func (r *repository) GetByID(ctx context.Context, id int32) (service.TelegramUse
 	if err != nil {
 		return service.TelegramUser{}, logger.WrapError(err)
 	}
+	distance, err := rawUser.InitialDistanceKm.Float64Value()
+	if err != nil {
+		return service.TelegramUser{}, logger.WrapError(err)
+	}
 
 	return service.TelegramUser{
-		ID:         rawUser.ID,
-		TgUserID:   rawUser.TgUserID,
-		TgUsername: rawUser.TgUsername.String,
-		FullName:   rawUser.FullName.String,
+		ID:                    rawUser.ID,
+		TgUserID:              rawUser.TgUserID,
+		TgUsername:            rawUser.TgUsername.String,
+		FullName:              rawUser.FullName.String,
+		InitialHikesCount:     rawUser.InitialHikesCount,
+		InitialDistanceKm:     distance.Float64,
+		InitialElevationGainM: rawUser.InitialElevationGainM,
 	}, nil
 }
 
