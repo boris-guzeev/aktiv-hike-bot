@@ -195,11 +195,17 @@ make backup-db BACKUP_DIR=/path/to/backups
 > [!WARNING]
 > Restoring a backup completely replaces the current database.
 
-Specify the dump file and explicitly confirm the operation:
+Check which backup is the most recent:
+
+```sh
+ls -1t backups/*.dump | head -n 1
+```
+
+Restore that backup and explicitly confirm the operation:
 
 ```sh
 make restore-db \
-  BACKUP_FILE=backups/aktivhike_20261017_143000.dump \
+  BACKUP_FILE="$(ls -1t backups/*.dump | head -n 1)" \
   CONFIRM_RESTORE=yes
 ```
 
