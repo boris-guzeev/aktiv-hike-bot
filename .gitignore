@@ -2,5 +2,6 @@
 .trunk
 .env
 backups/
+users-initial-stat.csv
 PROGRESS-README.md
 LOCAL-README.md

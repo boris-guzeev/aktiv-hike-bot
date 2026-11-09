@@ -1,9 +1,10 @@
 include .env
 export
 
-.PHONY: seeds migrate migrate-down backup-db restore-db
+.PHONY: seeds migrate migrate-down backup-db restore-db import-users-stat
 
 BACKUP_DIR ?= backups
+USERS_STAT_FILE ?= users-initial-stat.csv
 
 seeds:
 	docker run --rm \
@@ -84,3 +85,12 @@ restore-db:
 		docker compose start $$services_to_restart; \
 	fi; \
 	echo "Database restored from: $(BACKUP_FILE)"
+
+import-users-stat: backup-db
+	docker run --rm \
+	--network=aktiv-hike-bot_app_net \
+	-e DB_DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable \
+	-v $(PWD):/app \
+	-w /app \
+	golang:1.25 \
+	go run ./cmd/import-users-stat --file "$(USERS_STAT_FILE)" $(IMPORT_ARGS)

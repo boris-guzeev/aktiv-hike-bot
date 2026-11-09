@@ -217,6 +217,45 @@ bot services remain stopped so that the incomplete database is not used.
 Database dumps do not contain files from the `hike_storage` Docker volume.
 Back up that volume separately when a full application backup is required.
 
+## Import Initial User Statistics
+
+Export the source spreadsheet as `users-initial-stat.csv` and place it in the
+project root. The first row must contain headers, and data must start on the
+second row. Columns A and B are ignored; columns C through F must be:
+
+| Column | Header                     |
+|--------|----------------------------|
+| C      | `tg_username`              |
+| D      | `initial_distance_km`      |
+| E      | `initial_elevation_gain_m` |
+| F      | `initial_hikes_count`      |
+
+Validate the entire file and match its usernames without changing the
+database:
+
+```sh
+make import-users-stat IMPORT_ARGS=--dry-run
+```
+
+Run the import:
+
+```sh
+make import-users-stat
+```
+
+The Make target creates a database backup before importing. Valid rows are
+updated in a single transaction. Rows with no username, invalid numeric values,
+unknown usernames, or ambiguous matches are skipped and included in the final
+report. Usernames are matched case-insensitively, with an optional leading `@`
+ignored. The CSV file is excluded from Git. Empty numeric cells in columns D
+through F are imported as zero.
+
+Use `USERS_STAT_FILE` to import a file from another path:
+
+```sh
+make import-users-stat USERS_STAT_FILE=/path/to/users-initial-stat.csv
+```
+
 ## Design Goals
 
 * Clean architecture
