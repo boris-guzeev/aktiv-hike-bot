@@ -81,6 +81,10 @@ func (r *router) routeMessage(ctx context.Context, m *tgbot.Message) error {
 		return r.showMainMenu(m.Chat.ID)
 	}
 
+	if handled, err := r.hikeHandler.HandleRememberedActualHikeNumber(ctx, m); handled || err != nil {
+		return err
+	}
+
 	handled, err := r.relayHandler.HandleClientMessage(m)
 	if handled || err != nil {
 		return err

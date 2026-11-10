@@ -67,6 +67,20 @@ func (h *Handler) ResetFSM(userID int64) {
 	h.fsm.Reset(userID)
 }
 
+// HandleRememberedActualHikeNumber handles only numeric messages when the user
+// has already opened the current hikes list. Non-numeric messages are left to
+// the router, which can relay them to the admin chat.
+func (h *Handler) HandleRememberedActualHikeNumber(ctx context.Context, m *tgbot.Message) (bool, error) {
+	if _, err := strconv.ParseInt(strings.TrimSpace(m.Text), 10, 32); err != nil {
+		return false, nil
+	}
+	if !h.fsm.HasActualHikes(m.From.ID) {
+		return false, nil
+	}
+
+	return true, h.HandleActualHikeNumber(ctx, m)
+}
+
 func (h *Handler) HandleActualHikeNumber(ctx context.Context, m *tgbot.Message) error {
 	userID := m.From.ID
 
@@ -80,7 +94,7 @@ func (h *Handler) HandleActualHikeNumber(ctx context.Context, m *tgbot.Message) 
 		return h.sendText(m.Chat.ID, "Такого номера нет в списке. Введите номер из списка.")
 	}
 
-	h.fsm.Reset(userID)
+	h.fsm.FinishActualHikeSelection(userID)
 
 	hike, err := h.service.GetHikeCard(ctx, hikeID)
 	if err != nil {

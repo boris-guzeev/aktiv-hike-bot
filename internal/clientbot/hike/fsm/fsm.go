@@ -54,6 +54,22 @@ func (f *FSM) GetHikeID(userID int64, number int32) (int32, bool) {
 	return list[number-1], true
 }
 
+func (f *FSM) HasActualHikes(userID int64) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return len(f.userHikeIDs[userID]) > 0
+}
+
+// FinishActualHikeSelection ends the number prompt but keeps the displayed
+// list, so another number can select a different hike from the same list.
+func (f *FSM) FinishActualHikeSelection(userID int64) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.userState[userID] = StateIdle
+}
+
 func (f *FSM) GetState(userID int64) State {
 	f.mu.Lock()
 	defer f.mu.Unlock()
