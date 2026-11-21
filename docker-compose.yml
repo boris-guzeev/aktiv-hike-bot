@@ -39,6 +39,19 @@ services:
     networks:
       - app_net
 
+  go-tools:
+    image: golang:1.25
+    profiles:
+      - tools
+    working_dir: /app
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+      TZ: ${TZ}
+    volumes:
+      - .:/app
+    networks:
+      - app_net
+
   admin-bot:
     platform: linux/amd64
     build:
