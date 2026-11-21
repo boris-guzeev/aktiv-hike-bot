@@ -14,6 +14,7 @@ type Achievement struct {
 	ID          int16  `db:"id" json:"id"`
 	Name        string `db:"name" json:"name"`
 	Description string `db:"description" json:"description"`
+	HasValue    bool   `db:"has_value" json:"has_value"`
 }
 
 type Admin struct {
@@ -100,6 +101,7 @@ type TelegramUser struct {
 }
 
 type TelegramUsersToAchievement struct {
-	TelegramUserID int32 `db:"telegram_user_id" json:"telegram_user_id"`
-	AchievementID  int16 `db:"achievement_id" json:"achievement_id"`
+	TelegramUserID int32       `db:"telegram_user_id" json:"telegram_user_id"`
+	AchievementID  int16       `db:"achievement_id" json:"achievement_id"`
+	Value          pgtype.Int4 `db:"value" json:"value"`
 }

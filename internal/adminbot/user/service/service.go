@@ -16,6 +16,8 @@ type Achievement struct {
 	ID          int16
 	Name        string
 	Description string
+	HasValue    bool
+	Value       *int32
 	Assigned    bool
 }
 
@@ -25,6 +27,8 @@ type Repository interface {
 	GetTelegramUser(ctx context.Context, id int32) (TelegramUser, error)
 	ListUserAchievements(ctx context.Context, userID int32) ([]Achievement, error)
 	ToggleUserAchievement(ctx context.Context, userID int32, achievementID int16) (bool, error)
+	SetUserAchievementValue(ctx context.Context, userID int32, achievementID int16, value int32) error
+	RemoveUserAchievement(ctx context.Context, userID int32, achievementID int16) error
 }
 
 type Service interface {
@@ -33,6 +37,8 @@ type Service interface {
 	GetTelegramUser(ctx context.Context, id int32) (TelegramUser, error)
 	ListUserAchievements(ctx context.Context, userID int32) ([]Achievement, error)
 	ToggleUserAchievement(ctx context.Context, userID int32, achievementID int16) (bool, error)
+	SetUserAchievementValue(ctx context.Context, userID int32, achievementID int16, value int32) error
+	RemoveUserAchievement(ctx context.Context, userID int32, achievementID int16) error
 }
 
 func (s *service) ListTelegramUsers(ctx context.Context) ([]TelegramUser, error) {
@@ -49,6 +55,14 @@ func (s *service) ListUserAchievements(ctx context.Context, userID int32) ([]Ach
 
 func (s *service) ToggleUserAchievement(ctx context.Context, userID int32, achievementID int16) (bool, error) {
 	return s.repo.ToggleUserAchievement(ctx, userID, achievementID)
+}
+
+func (s *service) SetUserAchievementValue(ctx context.Context, userID int32, achievementID int16, value int32) error {
+	return s.repo.SetUserAchievementValue(ctx, userID, achievementID, value)
+}
+
+func (s *service) RemoveUserAchievement(ctx context.Context, userID int32, achievementID int16) error {
+	return s.repo.RemoveUserAchievement(ctx, userID, achievementID)
 }
 
 type service struct {

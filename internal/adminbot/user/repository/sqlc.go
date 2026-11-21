@@ -82,9 +82,28 @@ func (r *repository) ListUserAchievements(ctx context.Context, userID int32) ([]
 	}
 	items := make([]service.Achievement, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, service.Achievement{ID: row.ID, Name: row.Name, Description: row.Description, Assigned: row.Assigned})
+		var value *int32
+		if row.Value.Valid {
+			value = &row.Value.Int32
+		}
+		items = append(items, service.Achievement{
+			ID: row.ID, Name: row.Name, Description: row.Description,
+			HasValue: row.HasValue, Value: value, Assigned: row.Assigned,
+		})
 	}
 	return items, nil
+}
+
+func (r *repository) SetUserAchievementValue(ctx context.Context, userID int32, achievementID int16, value int32) error {
+	err := r.queries.SetUserAchievementValue(ctx, sqlc.SetUserAchievementValueParams{
+		UserID: userID, AchievementID: achievementID, Value: pgtype.Int4{Int32: value, Valid: true},
+	})
+	return logger.WrapError(err)
+}
+
+func (r *repository) RemoveUserAchievement(ctx context.Context, userID int32, achievementID int16) error {
+	err := r.queries.RemoveUserAchievement(ctx, sqlc.RemoveUserAchievementParams{UserID: userID, AchievementID: achievementID})
+	return logger.WrapError(err)
 }
 
 func (r *repository) ToggleUserAchievement(ctx context.Context, userID int32, achievementID int16) (bool, error) {

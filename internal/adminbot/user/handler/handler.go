@@ -22,12 +22,18 @@ const (
 	stateSelectUser
 	stateViewUser
 	stateEditAchievements
+	stateEditAchievementValue
 )
 
+const seasonsAchievementName = "SEASONS"
+
+const maxSeasons = 20
+
 type session struct {
-	state   state
-	userIDs []int32
-	userID  int32
+	state         state
+	userIDs       []int32
+	userID        int32
+	achievementID int16
 }
 
 type Handler struct {
@@ -153,9 +159,46 @@ func (h *Handler) Handle(ctx context.Context, m *tgbot.Message) error {
 			_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите ID достижения из списка."))
 			return logger.WrapError(err)
 		}
+		if selected.HasValue {
+			s.state = stateEditAchievementValue
+			s.achievementID = selected.ID
+			h.set(m.From.ID, s)
+			current := ""
+			if selected.Value != nil {
+				current = fmt.Sprintf(" Текущее значение: %d.", *selected.Value)
+			}
+			msg := tgbot.NewMessage(m.Chat.ID, "Введите количество сезонов (0 — убрать достижение)."+current)
+			msg.ReplyMarkup = userUI.BackKeyboard()
+			_, err = h.bot.Send(msg)
+			return logger.WrapError(err)
+		}
 		if _, err := h.service.ToggleUserAchievement(ctx, s.userID, selected.ID); err != nil {
 			return err
 		}
+		return h.showAchievements(ctx, m.Chat.ID, s.userID)
+	case stateEditAchievementValue:
+		if m.Text == userUI.ButtonBack {
+			s.state = stateEditAchievements
+			s.achievementID = 0
+			h.set(m.From.ID, s)
+			return h.showAchievements(ctx, m.Chat.ID, s.userID)
+		}
+		value, err := strconv.ParseInt(strings.TrimSpace(m.Text), 10, 32)
+		if err != nil || value < 0 || value > maxSeasons {
+			_, err = h.bot.Send(tgbot.NewMessage(m.Chat.ID, "Введите целое число от 0 до 20."))
+			return logger.WrapError(err)
+		}
+		if value == 0 {
+			err = h.service.RemoveUserAchievement(ctx, s.userID, s.achievementID)
+		} else {
+			err = h.service.SetUserAchievementValue(ctx, s.userID, s.achievementID, int32(value))
+		}
+		if err != nil {
+			return err
+		}
+		s.state = stateEditAchievements
+		s.achievementID = 0
+		h.set(m.From.ID, s)
 		return h.showAchievements(ctx, m.Chat.ID, s.userID)
 	default:
 		return h.ListUsers(ctx, m)
@@ -185,7 +228,7 @@ func (h *Handler) showCard(ctx context.Context, chatID int64, userID int32) erro
 	count := 0
 	for _, a := range achievements {
 		if a.Assigned {
-			fmt.Fprintf(&b, "🏅 <b>%s</b> — %s\n", html.EscapeString(a.Name), html.EscapeString(a.Description))
+			fmt.Fprintf(&b, "🏅 <b>%s</b> — %s\n", html.EscapeString(achievementDisplayName(a)), html.EscapeString(a.Description))
 			count++
 		}
 	}
@@ -211,19 +254,47 @@ func (h *Handler) showAchievements(ctx context.Context, chatID int64, userID int
 		if a.Assigned {
 			mark = "✅"
 		}
+		name := achievementDisplayName(a)
 		fmt.Fprintf(
 			&b,
 			"ID %d · %s <b>%s</b>\n%s\n\n",
 			a.ID,
 			mark,
-			html.EscapeString(a.Name),
+			html.EscapeString(name),
 			html.EscapeString(a.Description),
 		)
 	}
-	b.WriteString("Отправьте ID, чтобы добавить или убрать достижение.")
+	b.WriteString("Отправьте ID, чтобы изменить достижение.")
 	msg := tgbot.NewMessage(chatID, b.String())
 	msg.ParseMode = tgbot.ModeHTML
 	msg.ReplyMarkup = userUI.BackKeyboard()
 	_, err = h.bot.Send(msg)
 	return logger.WrapError(err)
+}
+
+func achievementDisplayName(a userService.Achievement) string {
+	if a.Name != seasonsAchievementName || a.Value == nil || *a.Value <= 0 {
+		return a.Name
+	}
+	season := "SEASONS"
+	if *a.Value == 1 {
+		season = "SEASON"
+	}
+	return fmt.Sprintf("%s %s", toRoman(*a.Value), season)
+}
+
+func toRoman(value int32) string {
+	if value <= 0 {
+		return ""
+	}
+	values := [...]int32{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
+	symbols := [...]string{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"}
+	var b strings.Builder
+	for i, n := range values {
+		for value >= n {
+			b.WriteString(symbols[i])
+			value -= n
+		}
+	}
+	return b.String()
 }

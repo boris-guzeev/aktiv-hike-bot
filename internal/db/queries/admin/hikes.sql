@@ -119,7 +119,7 @@ FROM telegram_users
 WHERE id = $1;
 
 -- name: ListUserAchievements :many
-SELECT a.id, a.name, a.description,
+SELECT a.id, a.name, a.description, a.has_value, uta.value,
        (uta.telegram_user_id IS NOT NULL)::boolean AS assigned
 FROM achievements a
 LEFT JOIN telegram_users_to_achievements uta
@@ -140,6 +140,17 @@ WITH deleted AS (
     RETURNING achievement_id
 )
 SELECT EXISTS (SELECT 1 FROM inserted) AS assigned;
+
+-- name: SetUserAchievementValue :exec
+INSERT INTO telegram_users_to_achievements (telegram_user_id, achievement_id, value)
+VALUES (sqlc.arg(user_id), sqlc.arg(achievement_id), sqlc.arg(value))
+ON CONFLICT (telegram_user_id, achievement_id)
+DO UPDATE SET value = EXCLUDED.value;
+
+-- name: RemoveUserAchievement :exec
+DELETE FROM telegram_users_to_achievements
+WHERE telegram_user_id = sqlc.arg(user_id)
+  AND achievement_id = sqlc.arg(achievement_id);
 
 -- =========================================
 -- BOOKINGS

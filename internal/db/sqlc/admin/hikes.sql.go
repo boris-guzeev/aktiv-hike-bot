@@ -454,7 +454,7 @@ func (q *Queries) ListTelegramUsers(ctx context.Context) ([]ListTelegramUsersRow
 }
 
 const listUserAchievements = `-- name: ListUserAchievements :many
-SELECT a.id, a.name, a.description,
+SELECT a.id, a.name, a.description, a.has_value, uta.value,
        (uta.telegram_user_id IS NOT NULL)::boolean AS assigned
 FROM achievements a
 LEFT JOIN telegram_users_to_achievements uta
@@ -463,10 +463,12 @@ ORDER BY a.id
 `
 
 type ListUserAchievementsRow struct {
-	ID          int16  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Description string `db:"description" json:"description"`
-	Assigned    bool   `db:"assigned" json:"assigned"`
+	ID          int16       `db:"id" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description string      `db:"description" json:"description"`
+	HasValue    bool        `db:"has_value" json:"has_value"`
+	Value       pgtype.Int4 `db:"value" json:"value"`
+	Assigned    bool        `db:"assigned" json:"assigned"`
 }
 
 func (q *Queries) ListUserAchievements(ctx context.Context, telegramUserID int32) ([]ListUserAchievementsRow, error) {
@@ -482,6 +484,8 @@ func (q *Queries) ListUserAchievements(ctx context.Context, telegramUserID int32
 			&i.ID,
 			&i.Name,
 			&i.Description,
+			&i.HasValue,
+			&i.Value,
 			&i.Assigned,
 		); err != nil {
 			return nil, err
@@ -492,6 +496,22 @@ func (q *Queries) ListUserAchievements(ctx context.Context, telegramUserID int32
 		return nil, err
 	}
 	return items, nil
+}
+
+const removeUserAchievement = `-- name: RemoveUserAchievement :exec
+DELETE FROM telegram_users_to_achievements
+WHERE telegram_user_id = $1
+  AND achievement_id = $2
+`
+
+type RemoveUserAchievementParams struct {
+	UserID        int32 `db:"user_id" json:"user_id"`
+	AchievementID int16 `db:"achievement_id" json:"achievement_id"`
+}
+
+func (q *Queries) RemoveUserAchievement(ctx context.Context, arg RemoveUserAchievementParams) error {
+	_, err := q.db.Exec(ctx, removeUserAchievement, arg.UserID, arg.AchievementID)
+	return err
 }
 
 const setPublished = `-- name: SetPublished :exec
@@ -507,6 +527,24 @@ type SetPublishedParams struct {
 
 func (q *Queries) SetPublished(ctx context.Context, arg SetPublishedParams) error {
 	_, err := q.db.Exec(ctx, setPublished, arg.IsPublished, arg.ID)
+	return err
+}
+
+const setUserAchievementValue = `-- name: SetUserAchievementValue :exec
+INSERT INTO telegram_users_to_achievements (telegram_user_id, achievement_id, value)
+VALUES ($1, $2, $3)
+ON CONFLICT (telegram_user_id, achievement_id)
+DO UPDATE SET value = EXCLUDED.value
+`
+
+type SetUserAchievementValueParams struct {
+	UserID        int32       `db:"user_id" json:"user_id"`
+	AchievementID int16       `db:"achievement_id" json:"achievement_id"`
+	Value         pgtype.Int4 `db:"value" json:"value"`
+}
+
+func (q *Queries) SetUserAchievementValue(ctx context.Context, arg SetUserAchievementValueParams) error {
+	_, err := q.db.Exec(ctx, setUserAchievementValue, arg.UserID, arg.AchievementID, arg.Value)
 	return err
 }
 
