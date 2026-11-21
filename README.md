@@ -221,14 +221,18 @@ Back up that volume separately when a full application backup is required.
 
 Export the source spreadsheet as `users-initial-stat.csv` and place it in the
 project root. The first row must contain headers, and data must start on the
-second row. Columns A and B are ignored; columns C through F must be:
+second row. The following six headers are required:
 
-| Column | Header                     |
-|--------|----------------------------|
-| C      | `tg_username`              |
-| D      | `initial_distance_km`      |
-| E      | `initial_elevation_gain_m` |
-| F      | `initial_hikes_count`      |
+| Header                     |
+|----------------------------|
+| `tg_username`              |
+| `initial_distance_km`      |
+| `initial_elevation_gain_m` |
+| `initial_points`           |
+| `initial_events`           |
+| `initial_achievements`     |
+
+Their order does not matter. Other spreadsheet columns are ignored.
 
 Validate the entire file and match its usernames without changing the
 database:
@@ -244,11 +248,19 @@ make import-users-stat
 ```
 
 The Make target creates a database backup before importing. Valid rows are
-updated in a single transaction. Rows with no username, invalid numeric values,
-unknown usernames, or ambiguous matches are skipped and included in the final
-report. Usernames are matched case-insensitively, with an optional leading `@`
-ignored. The CSV file is excluded from Git. Empty numeric cells in columns D
-through F are imported as zero.
+updated in a single transaction. If a username is not in the database, a
+preliminary user is created and linked to the real Telegram account when that
+username first uses either bot. Rows with no username, invalid numeric values,
+or ambiguous matches are skipped and included in the final report. Usernames
+are matched case-insensitively, with an optional leading `@` ignored. Empty
+numeric cells are imported as zero.
+
+Achievements in `initial_achievements` are separated by commas (the CSV cell
+therefore normally needs double quotes). Names are matched case-insensitively.
+For example, `"4000+, TREKKER, III SEASONS"` imports two regular achievements
+and a `SEASONS` value of 3. If several `SEASONS` values occur, only the largest
+is saved. Unknown achievement names do not skip the row and are printed as
+warnings in the import report.
 
 Use `USERS_STAT_FILE` to import a file from another path:
 

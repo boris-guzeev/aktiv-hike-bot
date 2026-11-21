@@ -98,6 +98,7 @@ type TelegramUser struct {
 	InitialHikesCount     int32          `db:"initial_hikes_count" json:"initial_hikes_count"`
 	InitialDistanceKm     pgtype.Numeric `db:"initial_distance_km" json:"initial_distance_km"`
 	InitialElevationGainM int32          `db:"initial_elevation_gain_m" json:"initial_elevation_gain_m"`
+	InitialPoints         int32          `db:"initial_points" json:"initial_points"`
 }
 
 type TelegramUsersToAchievement struct {

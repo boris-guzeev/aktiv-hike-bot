@@ -67,14 +67,24 @@ FROM telegram_users
 WHERE id = $1;
 
 -- name: UpsertTelegramUser :one
-INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (tg_user_id)
-DO UPDATE SET
-    tg_username = EXCLUDED.tg_username,
-    full_name   = EXCLUDED.full_name,
-    lang        = EXCLUDED.lang
-RETURNING id;
+WITH claimed AS (
+    UPDATE telegram_users
+    SET tg_user_id = $1, tg_username = $2, full_name = $3, lang = $4
+    WHERE tg_user_id < 0
+      AND $2::text IS NOT NULL
+      AND lower(trim(leading '@' from tg_username)) = lower(trim(leading '@' from $2::text))
+      AND NOT EXISTS (SELECT 1 FROM telegram_users WHERE tg_user_id = $1)
+    RETURNING id
+), upserted AS (
+    INSERT INTO telegram_users (tg_user_id, tg_username, full_name, lang)
+    SELECT $1, $2, $3, $4 WHERE NOT EXISTS (SELECT 1 FROM claimed)
+    ON CONFLICT (tg_user_id) DO UPDATE SET
+        tg_username = EXCLUDED.tg_username,
+        full_name = EXCLUDED.full_name,
+        lang = EXCLUDED.lang
+    RETURNING id
+)
+SELECT id FROM claimed UNION ALL SELECT id FROM upserted LIMIT 1;
 
 -- name: CreateAdminIfNotExists :exec
 INSERT INTO admins (id)

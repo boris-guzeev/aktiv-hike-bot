@@ -9,23 +9,31 @@ import (
 	"strings"
 )
 
-const requiredColumnCount = 6
-
 var distancePattern = regexp.MustCompile(`^\d+(?:[.,]\d{1,2})?$`)
+
+var requiredColumns = []string{
+	"tg_username",
+	"initial_distance_km",
+	"initial_elevation_gain_m",
+	"initial_points",
+	"initial_events",
+	"initial_achievements",
+}
 
 type userStat struct {
 	Row            int
 	Username       string
 	DistanceKm     string
 	ElevationGainM int32
-	HikesCount     int32
+	Points         int32
+	Events         int32
+	Achievements   []string
 }
 
 type importIssue struct {
 	Row     int
 	Message string
 }
-
 type parseResult struct {
 	Stats    []userStat
 	Issues   []importIssue
@@ -36,7 +44,6 @@ func parseUserStats(r io.Reader) (parseResult, error) {
 	reader := csv.NewReader(r)
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
-
 	records, err := reader.ReadAll()
 	if err != nil {
 		return parseResult{}, fmt.Errorf("read CSV: %w", err)
@@ -44,7 +51,8 @@ func parseUserStats(r io.Reader) (parseResult, error) {
 	if len(records) == 0 {
 		return parseResult{}, fmt.Errorf("CSV is empty")
 	}
-	if err := validateHeader(records[0]); err != nil {
+	columns, err := parseHeader(records[0])
+	if err != nil {
 		return parseResult{}, err
 	}
 
@@ -56,12 +64,7 @@ func parseUserStats(r io.Reader) (parseResult, error) {
 			continue
 		}
 		result.RowsRead++
-		if len(record) < requiredColumnCount {
-			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("expected at least 6 columns, got %d", len(record))})
-			continue
-		}
-
-		username := normalizeUsername(record[2])
+		username := normalizeUsername(field(record, columns["tg_username"]))
 		if username == "" {
 			result.Issues = append(result.Issues, importIssue{Row: row, Message: "tg_username is empty"})
 			continue
@@ -70,53 +73,82 @@ func parseUserStats(r io.Reader) (parseResult, error) {
 			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("duplicate tg_username %q (first seen at row %d)", username, previousRow)})
 			continue
 		}
-
-		distance, err := parseDistance(record[3])
+		distance, err := parseDistance(field(record, columns["initial_distance_km"]))
 		if err != nil {
 			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("initial_distance_km: %v", err)})
 			continue
 		}
-		elevation, err := parseNonNegativeInt32(record[4])
+		elevation, err := parseNonNegativeInt32(field(record, columns["initial_elevation_gain_m"]))
 		if err != nil {
 			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("initial_elevation_gain_m: %v", err)})
 			continue
 		}
-		hikes, err := parseNonNegativeInt32(record[5])
+		points, err := parseNonNegativeInt32(field(record, columns["initial_points"]))
 		if err != nil {
-			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("initial_hikes_count: %v", err)})
+			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("initial_points: %v", err)})
+			continue
+		}
+		events, err := parseNonNegativeInt32(field(record, columns["initial_events"]))
+		if err != nil {
+			result.Issues = append(result.Issues, importIssue{Row: row, Message: fmt.Sprintf("initial_events: %v", err)})
 			continue
 		}
 
 		seenUsernames[username] = row
 		result.Stats = append(result.Stats, userStat{
-			Row:            row,
-			Username:       username,
-			DistanceKm:     distance,
-			ElevationGainM: elevation,
-			HikesCount:     hikes,
+			Row: row, Username: username, DistanceKm: distance, ElevationGainM: elevation,
+			Points: points, Events: events, Achievements: parseAchievementList(field(record, columns["initial_achievements"])),
 		})
 	}
-
 	return result, nil
 }
 
-func validateHeader(header []string) error {
-	if len(header) < requiredColumnCount {
-		return fmt.Errorf("header: expected at least 6 columns, got %d", len(header))
+func parseHeader(header []string) (map[string]int, error) {
+	required := make(map[string]bool, len(requiredColumns))
+	for _, name := range requiredColumns {
+		required[name] = true
 	}
-	want := []string{
-		"tg_username",
-		"initial_distance_km",
-		"initial_elevation_gain_m",
-		"initial_hikes_count",
+
+	columns := make(map[string]int, len(requiredColumns))
+	for i, value := range header {
+		name := strings.TrimSpace(strings.TrimPrefix(value, "\ufeff"))
+		if !required[name] {
+			continue
+		}
+		if _, exists := columns[name]; exists {
+			return nil, fmt.Errorf("header: duplicate column %q", name)
+		}
+		columns[name] = i
 	}
-	for i, expected := range want {
-		actual := strings.TrimSpace(header[i+2])
-		if actual != expected {
-			return fmt.Errorf("header column %c: expected %q, got %q", 'C'+i, expected, actual)
+
+	var missing []string
+	for _, name := range requiredColumns {
+		if _, exists := columns[name]; !exists {
+			missing = append(missing, name)
 		}
 	}
-	return nil
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("header: missing required columns: %s", strings.Join(missing, ", "))
+	}
+	return columns, nil
+}
+
+func field(record []string, index int) string {
+	if index >= len(record) {
+		return ""
+	}
+	return record[index]
+}
+
+func parseAchievementList(value string) []string {
+	var result []string
+	for _, name := range strings.Split(value, ",") {
+		name = strings.Join(strings.Fields(name), " ")
+		if name != "" {
+			result = append(result, name)
+		}
+	}
+	return result
 }
 
 func isEmptyRow(record []string) bool {
